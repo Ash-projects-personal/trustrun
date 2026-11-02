@@ -23,10 +23,52 @@ pip install -e .
 ## Quickstart
 
 ```bash
-trustrun audit <agent> <task>
+pip install -e .
 ```
 
-You get one trust report with four sections. Each section returns READY, REVIEW, or BLOCK, with evidence attached to every claim.
+Audit any agent with one command. The agent is a dotted path to a
+callable, the task is a JSON file.
+
+```bash
+trustrun audit trustrun.consistency:steady_agent task.json \
+  --tools trustrun.stress:demo_tools \
+  --data train.jsonl --k 5 --seed 0
+```
+
+You get one trust report with four sections. Each section returns
+READY, REVIEW, or BLOCK, with evidence attached to every claim.
+
+In code, the same audit is one function call:
+
+```python
+from trustrun.cli import run_audit, format_report
+
+report = run_audit(agent, task, data_path="train.jsonl", seed=0, k=5)
+print(format_report(report))
+```
+
+The agent takes the task text and returns a dict with a "result" key.
+Agents that also accept a tools dict get the full stress battery. The
+task is a dict with "text", "expect", and optional "tools",
+"variants", "rubric", and "contract". The --data file is JSONL, one
+record per line, with a "text" field. Records shaped like dolly-15k
+(instruction, input, output) are joined automatically.
+
+## How the verdict works
+
+READY means every section passed cleanly. REVIEW means something needs
+a human look: a section came back unverified, the data has review level
+duplication, or the agent does not take tools so the tool channel
+attacks could not be measured. BLOCK means something failed: a contract
+claim failed, an attack got through, runs disagreed, or a cheating
+check fired. BLOCK beats REVIEW beats READY.
+
+Three rules keep the report honest. Anything a module cannot determine
+stays unverified and never becomes a pass. An agent that completes zero
+runs is consistently failing, so its consistency section reports BLOCK,
+not a clean pass. And skipping --data leaves the data section
+unverified, so the report can never read READY without training data
+to check.
 
 ## Real data
 
@@ -34,4 +76,10 @@ No synthetic data in the demo path. The contract module grows out of the Pact ve
 
 ## Status
 
-Early build. The contract module works and is dogfooded on real data (see above). The stress module works: adversarial replay over input perturbation, mid run tool failure, and injection, with two invisible encoding classes (tagblock and zerowidth) from the UnseenRecall teardown, each verified lossless and NFKC stable. The data module works: exact duplicate, near duplicate, and template cluster auditing over any training records, with the near duplicate count on dolly-15k responses reproducing the Lexsi gate's measured 65 exactly. All four modules are live and the CLI prints the report skeleton. Next is wiring all four into the full report.
+All four modules are live and the CLI wires them into one report. The
+demo runs the consistency module's steady agent against its flaky agent
+on the same task, with a 2,000 row slice of real dolly-15k as the
+training data. The steady agent lands at REVIEW: contract, consistency,
+and data all pass, but it takes no tools, so the tool channel attacks
+are honestly unmeasured. The flaky agent lands at BLOCK: variance and
+cheating flags fire with the evidence attached. Full suite 70/70 green.
