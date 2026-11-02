@@ -9,9 +9,14 @@ from trustrun.contract import verify_delivery
 from trustrun.contract.dogfood import (
     CHEAT_CASES,
     contract_for_case,
+    data_available,
     load_records,
     run_dogfood,
 )
+
+needs_pact_data = pytest.mark.skipif(
+    not data_available(),
+    reason="Pact experiment data not available on this machine")
 
 
 def test_exact_pass():
@@ -132,6 +137,7 @@ def test_rejects_non_dict_inputs():
         verify_delivery({}, "not a dict")
 
 
+@needs_pact_data
 def test_dogfood_two_real_cases():
     results, attacks = load_records()
     honest = results["cases"][0]
@@ -145,6 +151,7 @@ def test_dogfood_two_real_cases():
     assert cheat_report["passed"] == 5
 
 
+@needs_pact_data
 def test_dogfood_full_counts():
     reports, totals = run_dogfood()
     assert len(reports) == 32

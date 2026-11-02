@@ -125,7 +125,17 @@ def contract_for_limit_case(limit):
     }
 
 
+def data_available():
+    """True when the Pact experiment data files exist on this machine."""
+    return ((PACT_EXPERIMENTS / "real_cases_results.json").is_file()
+            and (PACT_EXPERIMENTS / "adversarial_results.json").is_file())
+
+
 def load_records():
+    if not data_available():
+        raise FileNotFoundError(
+            "Pact experiment data not found at %s. "
+            "Dogfood tests need a local checkout of the Pact project." % PACT_EXPERIMENTS)
     results = json.loads((PACT_EXPERIMENTS / "real_cases_results.json").read_text())
     attacks = json.loads((PACT_EXPERIMENTS / "adversarial_results.json").read_text())
     return results, attacks
