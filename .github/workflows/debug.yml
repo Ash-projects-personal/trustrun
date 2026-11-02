@@ -4,22 +4,7 @@ on:
   push:
 
 jobs:
-  checkout-only:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v5
-      - run: echo "checkout OK" && ls
-
-  setup-python-only:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-      - run: python --version
-
-  pip-install-only:
+  import-check:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -27,8 +12,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[test]"
+      - run: python -c "import trustrun; print('import OK')"
 
-  pytest-only:
+  test-contract:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -36,4 +22,44 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e ".[test]"
-      - run: python -m pytest tests/ -q
+      - run: python -m pytest tests/test_contract.py -q
+
+  test-stress:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[test]"
+      - run: python -m pytest tests/test_stress.py -q
+
+  test-consistency:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[test]"
+      - run: python -m pytest tests/test_consistency.py -q
+
+  test-data:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[test]"
+      - run: python -m pytest tests/test_data.py -q
+
+  test-cli:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[test]"
+      - run: python -m pytest tests/test_cli.py -q
