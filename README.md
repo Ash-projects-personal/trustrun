@@ -6,7 +6,7 @@ I built Trustrun because agents are moving into production and nobody can prove 
 
 ## The four modules
 
-**Contract.** Did the agent do what was agreed. Every run gets a machine checkable contract of what the agent was supposed to do. A verifier judges the delivered output against the contract, claim by claim.
+**Contract.** Did the agent do what was agreed. Every run gets a machine checkable contract of what the agent was supposed to do. A verifier judges the delivered output against the contract, claim by claim. Working now: `verify_delivery` supports four check kinds (exact match, contains, numeric tolerance, custom judge), returns a per claim verdict of pass, fail, or unverified with evidence attached, and never passes a claim it cannot check. Dogfooded on 32 real Pact records: 31 pass, 1 fail, and the fail is the documented translation limit case, a cheat that counting checks cannot catch.
 
 **Stress.** Does the agent survive attack. Adversarial replay: perturbed inputs, tool failures mid run, prompt injection including invisible encoding attacks.
 
@@ -34,4 +34,4 @@ No synthetic data in the demo path. The contract module grows out of the Pact ve
 
 ## Status
 
-Early build. The four modules are stubbed and the CLI prints the report skeleton. Working code lands module by module, starting with contract.
+Early build. The contract module works and is dogfooded on real data (see above). Stress, consistency, and data are stubbed and the CLI prints the report skeleton. Working code lands module by module.
