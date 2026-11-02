@@ -34,4 +34,4 @@ No synthetic data in the demo path. The contract module grows out of the Pact ve
 
 ## Status
 
-Early build. The contract module works and is dogfooded on real data (see above). Stress, consistency, and data are stubbed and the CLI prints the report skeleton. Working code lands module by module.
+Early build. The contract module works and is dogfooded on real data (see above). The stress module works: adversarial replay over input perturbation, mid run tool failure, and injection, with two invisible encoding classes (tagblock and zerowidth) from the UnseenRecall teardown, each verified lossless and NFKC stable. Consistency and data are stubbed and the CLI prints the report skeleton. Working code lands module by module.
