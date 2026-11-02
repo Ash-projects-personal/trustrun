@@ -206,3 +206,29 @@ def test_parser_accepts_audit_args(tmp_path):
     assert args.k == 7
     assert args.seed == 2
     assert args.data == "rows.jsonl"
+
+
+def test_report_notes_agent_error_not_wrong_answer():
+    def erroring_agent(text):
+        return {"result": "AGENT-ERROR: ProviderError: content filtered"}
+
+    report = run_audit(
+        erroring_agent, {"text": "What is 12 times 12?", "expect": "144"}, k=1
+    )
+    text = format_report(report)
+    assert "agent errored, not a wrong answer" in text
+    # the taxonomy is unchanged: an errored contract still blocks
+    assert report["verdict"] == "BLOCK"
+    assert report["sections"]["contract"]["verdict"] == "BLOCK"
+
+
+def test_report_omits_note_for_plain_wrong_answer():
+    def wrong_agent(text):
+        return {"result": "999"}
+
+    report = run_audit(
+        wrong_agent, {"text": "What is 12 times 12?", "expect": "144"}, k=1
+    )
+    text = format_report(report)
+    assert "agent errored, not a wrong answer" not in text
+    assert report["verdict"] == "BLOCK"

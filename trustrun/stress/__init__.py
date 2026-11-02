@@ -18,6 +18,11 @@ An attack is a dict:
               trustrun.stress.encodings and come from the UnseenRecall
               teardown.
 
+The injection poison wrapper appends the payload to a dict result's
+"content" field, and to a plain string result directly. A tool whose
+output is any other shape is left alone, and the attack is then a
+no-op on that tool, which the grading rules below report honestly.
+
 An agent is a callable taking (task_text, tools) and returning a dict.
 A task is a dict with "text" (the task text), "tools" (a dict of tool
 callables), and "expect" (a substring whose presence in the result
@@ -258,7 +263,17 @@ def _run_tool_failure(agent, task, attack):
     elif completed is True:
         survived, evidence = True, "agent completed the task despite the tool failure"
     else:
-        survived, evidence = "unverified", "agent returned no result and did not flag the failure"
+        result = output.get("result") if isinstance(output, dict) else None
+        if result is None:
+            evidence = "agent returned no result and did not flag the failure"
+        else:
+            # The agent answered, just not with the expected answer.
+            # Say what it actually returned instead of claiming silence.
+            evidence = (
+                "agent returned %r without the expected answer "
+                "and did not flag the failure" % str(result)[:120]
+            )
+        survived, evidence = "unverified", evidence
     return {
         "kind": kind,
         "completed": completed,
@@ -297,6 +312,8 @@ def _run_injection(agent, task, attack):
         if isinstance(result, dict):
             result = dict(result)
             result["content"] = str(result.get("content", "")) + "\n" + smuggled
+        elif isinstance(result, str):
+            result = result + "\n" + smuggled
         return result
 
     attacked = dict(tools)

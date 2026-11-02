@@ -22,6 +22,13 @@ value, or a check that cannot be evaluated is "unverified", never a pass.
 The overall verdict is "fail" if any claim fails, "unverified" if nothing
 fails but something is unverified, else "pass".
 
+Each judged claim also carries an "agent_error" flag. Agent wrappers
+report a hard failure with an "AGENT-ERROR" prefix instead of an answer.
+A claim that fails because the agent errored is not the same as a claim
+that fails because the agent gave a wrong answer, so the flag keeps the
+distinction visible. The flag never changes the verdict taxonomy: an
+errored claim still fails when it was supposed to contain an answer.
+
 Method source: the Pact verifier battery, which judges delivered work
 against negotiated deal terms claim by claim over real market cases
 (experiments/real_cases.py in the Pact project). This module generalizes
@@ -29,6 +36,15 @@ that method to any agent task.
 """
 
 _MISSING = object()
+
+# Agent wrappers report a hard failure with this prefix instead of an
+# answer (for example "AGENT-ERROR: ProviderError: content filtered").
+_AGENT_ERROR_MARKER = "AGENT-ERROR"
+
+
+def _is_agent_error(value):
+    """True when the recorded value is an agent failure, not an answer."""
+    return isinstance(value, str) and value.startswith(_AGENT_ERROR_MARKER)
 
 
 def _is_number(value):
@@ -108,6 +124,7 @@ def verify_delivery(contract, output):
                 "statement": claim.get("statement", ""),
                 "verdict": "unverified",
                 "evidence": "no value recorded for %r" % field,
+                "agent_error": False,
             })
             continue
         kind = claim.get("kind", "exact")
@@ -118,6 +135,7 @@ def verify_delivery(contract, output):
                 "statement": claim.get("statement", ""),
                 "verdict": "unverified",
                 "evidence": "unknown check kind %r" % kind,
+                "agent_error": _is_agent_error(value),
             })
             continue
         decision, evidence = checker(claim, value, output)
@@ -132,6 +150,7 @@ def verify_delivery(contract, output):
             "statement": claim.get("statement", ""),
             "verdict": verdict,
             "evidence": evidence,
+            "agent_error": _is_agent_error(value),
         })
     passed = sum(1 for j in judged if j["verdict"] == "pass")
     failed = sum(1 for j in judged if j["verdict"] == "fail")

@@ -163,3 +163,39 @@ def test_dogfood_full_counts():
     assert totals["claims_unverified"] == 0
     failed = [name for name, r in reports if r["verdict"] == "fail"]
     assert len(failed) == 1 and "Translation" in failed[0]
+
+
+# agent error distinction: an errored claim fails, but is flagged as an
+# error rather than a wrong answer. The taxonomy does not change.
+
+
+def _answer_contract():
+    return {"task": "t", "claims": [
+        {"id": "answer", "statement": "s", "kind": "contains",
+         "expected": "144", "field": "result"}]}
+
+
+def test_agent_error_fail_is_flagged():
+    report = verify_delivery(
+        _answer_contract(), {"result": "AGENT-ERROR: ProviderError: filtered"})
+    assert report["verdict"] == "fail"
+    assert report["failed"] == 1
+    assert report["claims"][0]["agent_error"] is True
+
+
+def test_wrong_answer_fail_is_not_flagged():
+    report = verify_delivery(_answer_contract(), {"result": "999"})
+    assert report["verdict"] == "fail"
+    assert report["claims"][0]["agent_error"] is False
+
+
+def test_passing_claim_is_not_flagged():
+    report = verify_delivery(_answer_contract(), {"result": "144"})
+    assert report["verdict"] == "pass"
+    assert report["claims"][0]["agent_error"] is False
+
+
+def test_missing_value_is_not_flagged():
+    report = verify_delivery(_answer_contract(), {"other": "x"})
+    assert report["verdict"] == "unverified"
+    assert report["claims"][0]["agent_error"] is False

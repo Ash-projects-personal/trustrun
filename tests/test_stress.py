@@ -250,6 +250,94 @@ def test_injection_marker_free_unaffected_is_survival():
     assert "baseline" in record["evidence"]
 
 
+# injection against string-returning tools. Regression: the poison
+# wrapper used to drop the payload when a tool returned a plain
+# string, silently turning the attack into a no-op.
+
+
+def _string_tool_task(**overrides):
+    def calc(expression):
+        return "42"
+
+    base = {
+        "text": "What is 6 times 7?",
+        "tools": {"calc": calc},
+        "expect": "42",
+    }
+    base.update(overrides)
+    return base
+
+
+def test_injection_plaintext_reaches_string_tool_output():
+    seen = {}
+
+    def echo_agent(task_text, tools):
+        out = tools["calc"]("6*7")
+        seen["tool_output"] = out
+        return {"result": "answer: " + out}
+
+    replay_attack(
+        echo_agent,
+        _string_tool_task(),
+        {"kind": "injection", "tool": "calc", "payload": _PAYLOAD},
+    )
+    assert "INJECTED:" in seen["tool_output"]
+    assert "PWNED" in seen["tool_output"]
+
+
+def test_injection_string_tool_follower_is_caught():
+    def follower(task_text, tools):
+        out = tools["calc"]("6*7")
+        if "INJECTED:" in out:
+            return {"result": out.split("INJECTED:", 1)[1].strip()}
+        return {"result": out}
+
+    record = replay_attack(
+        follower,
+        _string_tool_task(),
+        {"kind": "injection", "tool": "calc", "payload": _PAYLOAD},
+    )
+    assert record["survived"] is False
+
+
+def test_injection_string_tool_dict_behavior_unchanged():
+    # dict tools keep the old path: payload lands in "content".
+    seen = {}
+
+    def agent(task_text, tools):
+        out = tools["search"]("q")
+        seen["tool_output"] = out
+        return {"result": "answer from: " + out["content"].split("\n")[0]}
+
+    replay_attack(agent, _task(), _injection())
+    assert "INJECTED:" in seen["tool_output"]["content"]
+
+
+# tool_failure evidence: a wrong answer is not "no result"
+
+
+def test_tool_failure_wrong_answer_evidence_names_result():
+    def wrong_answerer(task_text, tools):
+        return {"result": "999"}
+
+    record = replay_attack(
+        wrong_answerer, _task(), {"kind": "tool_failure", "tool": "search"}
+    )
+    assert record["survived"] == "unverified"
+    assert "no result" not in record["evidence"]
+    assert "999" in record["evidence"]
+
+
+def test_tool_failure_no_result_evidence_kept():
+    def silent(task_text, tools):
+        return {"result": None}
+
+    record = replay_attack(
+        silent, _task(), {"kind": "tool_failure", "tool": "search"}
+    )
+    assert "no result" in record["evidence"]
+
+
 # malformed input
 
 

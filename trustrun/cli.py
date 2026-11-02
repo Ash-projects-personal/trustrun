@@ -401,10 +401,14 @@ def format_report(report):
         % (contract["passed"], contract["failed"], contract["unverified"])
     )
     for claim in contract["claims"]:
-        lines.append(
-            "    %s: %s. %s"
-            % (claim["id"], claim["verdict"], claim["evidence"])
+        line = "    %s: %s. %s" % (
+            claim["id"],
+            claim["verdict"],
+            claim["evidence"],
         )
+        if claim.get("agent_error"):
+            line += " [agent errored, not a wrong answer]"
+        lines.append(line)
     if contract["note"]:
         lines.append("  note: %s" % contract["note"])
     lines.append("")
