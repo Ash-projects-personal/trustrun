@@ -10,7 +10,7 @@ I built Trustrun because agents are moving into production and nobody can prove 
 
 **Stress.** Does the agent survive attack. Adversarial replay: perturbed inputs, tool failures mid run, prompt injection including invisible encoding attacks.
 
-**Consistency.** Does the agent do it every time. One pass means little. This module scores the agent across repeated runs and flags variance, reward hacking, and grader gaming.
+**Consistency.** Does the agent do it every time. One pass means little. This module scores the agent across repeated runs and flags variance, reward hacking, and grader gaming. Working now: `score_repeated_runs` runs an agent k times on one task with a seeded RNG, reports pass rate at 1 and at k, flags variance when runs disagree, and runs two documented cheating heuristics (identical outputs on variants with different expected answers, and outputs that echo the grading rubric without answering). Anything it cannot determine comes back unverified, and with k equal to 1 variance stays unmeasured. Ships with a steady demo agent and a seeded flaky demo agent.
 
 **Data.** Was the agent trained on clean data. Audits training and fine tuning data for collapse, poisoning, and synthetic rot.
 
@@ -34,4 +34,4 @@ No synthetic data in the demo path. The contract module grows out of the Pact ve
 
 ## Status
 
-Early build. The contract module works and is dogfooded on real data (see above). The stress module works: adversarial replay over input perturbation, mid run tool failure, and injection, with two invisible encoding classes (tagblock and zerowidth) from the UnseenRecall teardown, each verified lossless and NFKC stable. Consistency and data are stubbed and the CLI prints the report skeleton. Working code lands module by module.
+Early build. The contract module works and is dogfooded on real data (see above). The stress module works: adversarial replay over input perturbation, mid run tool failure, and injection, with two invisible encoding classes (tagblock and zerowidth) from the UnseenRecall teardown, each verified lossless and NFKC stable. The consistency module works: repeated run scoring with pass at 1 and pass at k, variance flags, and two documented cheating heuristics, shipped with steady and seeded flaky demo agents. Data is stubbed and the CLI prints the report skeleton. Working code lands module by module.
