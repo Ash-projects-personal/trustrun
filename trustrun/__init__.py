@@ -5,4 +5,4 @@ attacks it, repeats it, checks its training data, and returns one trust
 report with four sections: contract, stress, consistency, data.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"

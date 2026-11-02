@@ -492,6 +492,21 @@ def _load_task(task_arg):
     return json.loads(task_arg)
 
 
+def _positive_int(value):
+    """Argparse type for --k. Rejects bad input with a usage error."""
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        raise argparse.ArgumentTypeError(
+            "want a positive integer, got %r" % (value,)
+        )
+    if number < 1:
+        raise argparse.ArgumentTypeError(
+            "want a positive integer, got %r" % (value,)
+        )
+    return number
+
+
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="trustrun",
@@ -516,7 +531,9 @@ def build_parser():
         default=None,
         help="path to a JSONL file of training records",
     )
-    audit.add_argument("--k", type=int, default=5, help="repeated runs")
+    audit.add_argument(
+        "--k", type=_positive_int, default=5, help="repeated runs"
+    )
     audit.add_argument("--seed", type=int, default=0, help="random seed")
     return parser
 
@@ -526,6 +543,8 @@ def cmd_audit(args):
     task = _load_task(args.task)
     if not isinstance(task, dict):
         raise ValueError("task must be a JSON object")
+    if task.get("tools") is not None and not isinstance(task["tools"], dict):
+        raise ValueError("task tools must be an object")
     if args.tools:
         tools = _resolve_dotted(args.tools)
         if callable(tools):
@@ -539,11 +558,27 @@ def cmd_audit(args):
     print(format_report(report))
 
 
+# Errors a user can cause with bad input. These exit cleanly with one
+# error line on stderr. Anything else is a bug, and bugs keep their
+# tracebacks so they can be fixed.
+_CLI_ERRORS = (
+    ValueError,
+    FileNotFoundError,
+    json.JSONDecodeError,
+    ImportError,
+    AttributeError,
+)
+
+
 def main(argv=None):
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "audit":
-        cmd_audit(args)
+        try:
+            cmd_audit(args)
+        except _CLI_ERRORS as exc:
+            parser.exit(2, "trustrun: error: %s\n" % exc)
+    return 0
 
 
 if __name__ == "__main__":

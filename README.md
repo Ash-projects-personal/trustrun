@@ -47,6 +47,10 @@ report = run_audit(agent, task, data_path="train.jsonl", seed=0, k=5)
 print(format_report(report))
 ```
 
+Bad input fails cleanly. A bad agent path, an unreadable task, or a
+missing data file prints one error line and exits with code 2, never
+a traceback.
+
 The agent takes the task text and returns a dict with a "result" key.
 Agents that also accept a tools dict get the full stress battery. The
 task is a dict with "text", "expect", and optional "tools",
