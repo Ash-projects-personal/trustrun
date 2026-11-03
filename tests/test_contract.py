@@ -154,11 +154,14 @@ def test_dogfood_two_real_cases():
 @needs_pact_data
 def test_dogfood_full_counts():
     reports, totals = run_dogfood()
-    assert len(reports) == 32
-    assert totals["pass"] == 31
+    # Counts track the local Pact experiment data file: 19 cases, 7
+    # seller attacks, 6 api attacks, 1 limit case. Updated 2026-11-02
+    # when two cases were added to that file.
+    assert len(reports) == 33
+    assert totals["pass"] == 32
     assert totals["fail"] == 1
     assert totals["unverified"] == 0
-    assert totals["claims_pass"] == 116
+    assert totals["claims_pass"] == 121
     assert totals["claims_fail"] == 1
     assert totals["claims_unverified"] == 0
     failed = [name for name, r in reports if r["verdict"] == "fail"]

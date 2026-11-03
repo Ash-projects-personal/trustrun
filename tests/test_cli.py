@@ -55,7 +55,8 @@ def test_steady_agent_sections_have_evidence():
     assert consistency["cheating_flag"] is False
     assert consistency["variance_evidence"]
     stress = report["sections"]["stress"]
-    assert len(stress["attacks"]) == 5
+    # perturbation, tool failure, 3 injections, 2 monitor tampering
+    assert len(stress["attacks"]) == 7
     assert all(a["evidence"] for a in stress["attacks"])
     # steady_agent takes no tools, so tool channel attacks are unmeasured
     assert report["tools_capable"] is False
