@@ -154,18 +154,23 @@ def test_dogfood_two_real_cases():
 @needs_pact_data
 def test_dogfood_full_counts():
     reports, totals = run_dogfood()
-    # Counts track the local Pact experiment data file: 19 cases, 7
-    # seller attacks, 6 api attacks, 1 limit case. Updated 2026-11-02
-    # when two cases were added to that file.
-    assert len(reports) == 33
+    # Counts track the local Pact experiment data file: 20 cases, 13
+    # adversarial attacks (A1-A5 incl. A2b/A2c, B1-B6), 1 limit case.
+    # Updated 2026-11-02 when two cases were added; updated 2026-11-03
+    # when the "Email newsletter issue, cheat writer" case (0/5 checks,
+    # refunded, bond slashed) was added. Its "fail" verdict is correct:
+    # a cheater's delivery does not satisfy the contract checks.
+    assert len(reports) == 34
     assert totals["pass"] == 32
-    assert totals["fail"] == 1
+    assert totals["fail"] == 2
     assert totals["unverified"] == 0
-    assert totals["claims_pass"] == 121
-    assert totals["claims_fail"] == 1
+    assert totals["claims_pass"] == 123
+    assert totals["claims_fail"] == 4
     assert totals["claims_unverified"] == 0
     failed = [name for name, r in reports if r["verdict"] == "fail"]
-    assert len(failed) == 1 and "Translation" in failed[0]
+    assert len(failed) == 2
+    assert any("Translation" in name for name in failed)
+    assert any("Email newsletter issue, cheat writer" in name for name in failed)
 
 
 # agent error distinction: an errored claim fails, but is flagged as an

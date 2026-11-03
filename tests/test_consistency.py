@@ -115,6 +115,16 @@ def test_task_without_expect_is_unverifiable():
     assert report["runs"] == []
 
 
+def test_unverifiable_report_carries_chain_keys():
+    # Regression: the early unverifiable report must carry the same chain
+    # keys as the normal return, or trustrun.cli._consistency_section
+    # crashes with KeyError on tasks with no expect string.
+    report = score_repeated_runs(steady_agent, {"text": "hi"}, 3)
+    assert report["chain_length"] is None
+    assert report["chain_band"] is None
+    assert report["chain_band_evidence"] == ""
+
+
 def test_bad_inputs_raise_type_error():
     with pytest.raises(TypeError):
         score_repeated_runs("not callable", TASK, 3)

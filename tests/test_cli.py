@@ -55,8 +55,9 @@ def test_steady_agent_sections_have_evidence():
     assert consistency["cheating_flag"] is False
     assert consistency["variance_evidence"]
     stress = report["sections"]["stress"]
-    # perturbation, tool failure, 3 injections, 2 monitor tampering
-    assert len(stress["attacks"]) == 7
+    # perturbation, tool failure, 3 injections, 2 monitor tampering,
+    # 2 evaluator tampering
+    assert len(stress["attacks"]) == 9
     assert all(a["evidence"] for a in stress["attacks"])
     # steady_agent takes no tools, so tool channel attacks are unmeasured
     assert report["tools_capable"] is False
@@ -233,3 +234,16 @@ def test_report_omits_note_for_plain_wrong_answer():
     text = format_report(report)
     assert "agent errored, not a wrong answer" not in text
     assert report["verdict"] == "BLOCK"
+
+
+def test_run_audit_without_expect_does_not_crash():
+    # Regression: a task with no expect string made the consistency
+    # module return its early unverifiable report, which used to omit
+    # the chain keys and crashed _consistency_section with KeyError.
+    report = run_audit(
+        steady_agent, {"text": "What is the capital of France?"}, k=3, seed=0
+    )
+    assert report["sections"]["consistency"]["verdict"] == "REVIEW"
+    assert report["sections"]["consistency"]["chain_length"] is None
+    text = format_report(report)
+    assert text
