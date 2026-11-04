@@ -154,23 +154,45 @@ def test_dogfood_two_real_cases():
 @needs_pact_data
 def test_dogfood_full_counts():
     reports, totals = run_dogfood()
-    # Counts track the local Pact experiment data file: 20 cases, 13
+    # Counts track the local Pact experiment data file: 21 cases, 13
     # adversarial attacks (A1-A5 incl. A2b/A2c, B1-B6), 1 limit case.
     # Updated 2026-11-02 when two cases were added; updated 2026-11-03
     # when the "Email newsletter issue, cheat writer" case (0/5 checks,
-    # refunded, bond slashed) was added. Its "fail" verdict is correct:
-    # a cheater's delivery does not satisfy the contract checks.
-    assert len(reports) == 34
-    assert totals["pass"] == 32
-    assert totals["fail"] == 2
+    # refunded, bond slashed) was added; updated 2026-11-04 when the
+    # "Product photography set, cheat photographer" case was added.
+    # Both cheat cases are labeled in CHEAT_CASES, so they are judged
+    # against the cheat contract and PASS (correctly caught cheats).
+    assert len(reports) == 35
+    assert totals["pass"] == 34
+    assert totals["fail"] == 1
     assert totals["unverified"] == 0
-    assert totals["claims_pass"] == 123
-    assert totals["claims_fail"] == 4
+    assert totals["claims_pass"] == 131
+    assert totals["claims_fail"] == 1
     assert totals["claims_unverified"] == 0
     failed = [name for name, r in reports if r["verdict"] == "fail"]
-    assert len(failed) == 2
-    assert any("Translation" in name for name in failed)
-    assert any("Email newsletter issue, cheat writer" in name for name in failed)
+    assert failed == ["Translation, 1,000 words at the $10 Fiverr tier (limit case)"]
+
+
+@needs_pact_data
+def test_cheat_cases_cover_all_cheat_records():
+    # Regression: a cheat record missing from CHEAT_CASES is judged
+    # against the honest contract and gets a wrong "fail" verdict.
+    # This fails loudly when Pact adds a cheat case that dogfood.py
+    # has not labeled yet.
+    results, _ = load_records()
+    cases = results["cases"]
+    for i in CHEAT_CASES:
+        assert i < len(cases), "CHEAT_CASES index %d beyond data file" % i
+    # In the Pact experiment data every cheat deal is refunded with the
+    # bond slashed, and every honest deal is released with the bond
+    # returned: the settlement outcome derives the deal type from the
+    # recorded data itself, not from case-name heuristics.
+    refunded_indices = {i for i, c in enumerate(cases)
+                        if c.get("outcome") == "refunded"
+                        and c.get("bond_status") == "slashed"}
+    assert refunded_indices == CHEAT_CASES, (
+        "CHEAT_CASES %s does not match refunded/slashed cases %s in the "
+        "Pact data file" % (sorted(CHEAT_CASES), sorted(refunded_indices)))
 
 
 # agent error distinction: an errored claim fails, but is flagged as an

@@ -30,8 +30,11 @@ PACT_EXPERIMENTS = Path.home() / "workspace" / "projects" / "pact-agentic-commer
 # Indices into results["cases"] of the cheat deals. This tracks the Pact
 # experiment data file, not the code: new cases inserted into that
 # file shift these (a landing page case and a data labeling cheat case
-# were added in November 2026).
-CHEAT_CASES = {1, 2, 17, 18}
+# were added in November 2026; the "Email newsletter issue, cheat writer"
+# and "Product photography set, cheat photographer" cases were added
+# later in November 2026). A cheat judged against the honest contract
+# yields a wrong "fail" verdict, so this set must stay complete.
+CHEAT_CASES = {1, 2, 17, 18, 19, 20}
 
 
 def _parse_checks(checks):
