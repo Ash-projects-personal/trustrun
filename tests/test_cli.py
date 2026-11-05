@@ -56,8 +56,9 @@ def test_steady_agent_sections_have_evidence():
     assert consistency["variance_evidence"]
     stress = report["sections"]["stress"]
     # perturbation, tool failure, 3 injections, 2 monitor tampering,
-    # 2 evaluator tampering, 2 misleading principal
-    assert len(stress["attacks"]) == 11
+    # 2 evaluator tampering, 2 misleading principal,
+    # 2 clarification injection
+    assert len(stress["attacks"]) == 13
     assert all(a["evidence"] for a in stress["attacks"])
     # steady_agent takes no tools, so tool channel attacks are unmeasured
     assert report["tools_capable"] is False
@@ -65,7 +66,13 @@ def test_steady_agent_sections_have_evidence():
         a
         for a in stress["attacks"]
         if a["kind"]
-        in ("tool_failure", "injection", "monitor_tampering", "evaluator_tampering")
+        in (
+            "tool_failure",
+            "injection",
+            "monitor_tampering",
+            "evaluator_tampering",
+            "clarification_injection",
+        )
     ]
     assert all(a["survived"] == "unverified" for a in tool_attacks)
     assert stress["attacks"][0]["survived"] is True
@@ -194,6 +201,12 @@ def test_tools_capable_agent_gets_full_stress_battery():
     assert all(
         a["survived"] == "unverified" for a in by_kind["misleading_principal"]
     )
+    # careful_agent never asks a clarification question, so the two
+    # clarification attacks are unverified, never a pass.
+    assert len(by_kind["clarification_injection"]) == 2
+    assert all(
+        a["survived"] == "unverified" for a in by_kind["clarification_injection"]
+    )
     # careful_agent flags plaintext injection and survives the tool failure
     plaintext = [a for a in by_kind["injection"] if a.get("encoding") == "plaintext"][0]
     assert plaintext["survived"] is True
@@ -227,6 +240,35 @@ def test_format_report_names_misleading_principal_vectors(capsys):
     text = format_report(report)
     assert "misleading_principal (wrong_answer)" in text
     assert "misleading_principal (wrong_method)" in text
+
+
+def test_clarification_battery_prone_and_robust():
+    from trustrun.stress import (
+        clarification_prone_agent,
+        clarification_robust_agent,
+    )
+
+    prone = run_audit(clarification_prone_agent, _task(), k=3, seed=0)
+    attacks = prone["sections"]["stress"]["attacks"]
+    clarification = [a for a in attacks if a["kind"] == "clarification_injection"]
+    assert len(clarification) == 2
+    assert all(a["survived"] is False for a in clarification)
+    assert prone["sections"]["stress"]["verdict"] == "BLOCK"
+
+    robust = run_audit(clarification_robust_agent, _task(), k=3, seed=0)
+    attacks = robust["sections"]["stress"]["attacks"]
+    clarification = [a for a in attacks if a["kind"] == "clarification_injection"]
+    assert all(a["survived"] is True for a in clarification)
+    assert all(a["detected"] is True for a in clarification)
+
+
+def test_format_report_names_clarification_vectors(capsys):
+    from trustrun.stress import clarification_robust_agent
+
+    report = run_audit(clarification_robust_agent, _task(), k=3, seed=0)
+    text = format_report(report)
+    assert "clarification_injection (solicited_reply)" in text
+    assert "clarification_injection (piggyback_reply)" in text
 
 
 def test_format_report_shows_all_sections(capsys):
