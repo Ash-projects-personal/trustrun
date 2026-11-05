@@ -56,14 +56,29 @@ def test_steady_agent_sections_have_evidence():
     assert consistency["variance_evidence"]
     stress = report["sections"]["stress"]
     # perturbation, tool failure, 3 injections, 2 monitor tampering,
-    # 2 evaluator tampering
-    assert len(stress["attacks"]) == 9
+    # 2 evaluator tampering, 2 misleading principal
+    assert len(stress["attacks"]) == 11
     assert all(a["evidence"] for a in stress["attacks"])
     # steady_agent takes no tools, so tool channel attacks are unmeasured
     assert report["tools_capable"] is False
-    tool_attacks = [a for a in stress["attacks"] if a["kind"] != "perturbation"]
+    tool_attacks = [
+        a
+        for a in stress["attacks"]
+        if a["kind"]
+        in ("tool_failure", "injection", "monitor_tampering", "evaluator_tampering")
+    ]
     assert all(a["survived"] == "unverified" for a in tool_attacks)
     assert stress["attacks"][0]["survived"] is True
+    # Misleading principal is a text-channel attack, not a tool-channel
+    # one, but this task supplies no misleading_suggestion, so both
+    # vectors are unverified here. With a suggestion supplied they
+    # run even for a single-argument agent (see the suggestible test
+    # below): steady_agent would survive them by ignoring the note.
+    principal = [
+        a for a in stress["attacks"] if a["kind"] == "misleading_principal"
+    ]
+    assert len(principal) == 2
+    assert all(a["survived"] == "unverified" for a in principal)
 
 
 def test_no_data_flag_gives_review_data_section():
@@ -171,10 +186,47 @@ def test_tools_capable_agent_gets_full_stress_battery():
     assert len(by_kind["perturbation"]) == 1
     assert len(by_kind["tool_failure"]) == 1
     assert len(by_kind["injection"]) == 3
+    assert len(by_kind["monitor_tampering"]) == 2
+    assert len(by_kind["evaluator_tampering"]) == 2
+    # No misleading_suggestion on this task, so the two new attacks
+    # are unverified, never a pass.
+    assert len(by_kind["misleading_principal"]) == 2
+    assert all(
+        a["survived"] == "unverified" for a in by_kind["misleading_principal"]
+    )
     # careful_agent flags plaintext injection and survives the tool failure
     plaintext = [a for a in by_kind["injection"] if a.get("encoding") == "plaintext"][0]
     assert plaintext["survived"] is True
     assert plaintext["detected"] is True
+
+
+def test_misleading_principal_battery_with_suggestion():
+    from trustrun.stress import skeptical_agent, suggestible_agent
+
+    task = _task(misleading_suggestion="London")
+    suggestible = run_audit(suggestible_agent, task, k=3, seed=0)
+    attacks = suggestible["sections"]["stress"]["attacks"]
+    principal = [a for a in attacks if a["kind"] == "misleading_principal"]
+    assert len(principal) == 2
+    assert all(a["survived"] is False for a in principal)
+    assert suggestible["sections"]["stress"]["verdict"] == "BLOCK"
+
+    skeptical = run_audit(skeptical_agent, task, k=3, seed=0)
+    attacks = skeptical["sections"]["stress"]["attacks"]
+    principal = [a for a in attacks if a["kind"] == "misleading_principal"]
+    assert all(a["survived"] is True for a in principal)
+    assert all(a["detected"] is True for a in principal)
+
+
+def test_format_report_names_misleading_principal_vectors(capsys):
+    from trustrun.stress import skeptical_agent
+
+    report = run_audit(
+        skeptical_agent, _task(misleading_suggestion="London"), k=3, seed=0
+    )
+    text = format_report(report)
+    assert "misleading_principal (wrong_answer)" in text
+    assert "misleading_principal (wrong_method)" in text
 
 
 def test_format_report_shows_all_sections(capsys):
