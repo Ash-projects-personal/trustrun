@@ -154,19 +154,23 @@ def test_dogfood_two_real_cases():
 @needs_pact_data
 def test_dogfood_full_counts():
     reports, totals = run_dogfood()
-    # Counts track the local Pact experiment data file: 21 cases, 13
+    # Counts track the local Pact experiment data file: 23 cases, 13
     # adversarial attacks (A1-A5 incl. A2b/A2c, B1-B6), 1 limit case.
     # Updated 2026-11-02 when two cases were added; updated 2026-11-03
     # when the "Email newsletter issue, cheat writer" case (0/5 checks,
     # refunded, bond slashed) was added; updated 2026-11-04 when the
-    # "Product photography set, cheat photographer" case was added.
-    # Both cheat cases are labeled in CHEAT_CASES, so they are judged
+    # "Product photography set, cheat photographer" case was added;
+    # updated 2026-11-05 when the "Book cover design package, cheat
+    # designer" case (0/5 checks, refunded, bond slashed) was added;
+    # updated 2026-11-06 when the "API integration task, cheat
+    # integrator" case (0/5 checks, refunded, bond slashed) was added.
+    # All cheat cases are labeled in CHEAT_CASES, so they are judged
     # against the cheat contract and PASS (correctly caught cheats).
-    assert len(reports) == 35
-    assert totals["pass"] == 34
+    assert len(reports) == 37
+    assert totals["pass"] == 36
     assert totals["fail"] == 1
     assert totals["unverified"] == 0
-    assert totals["claims_pass"] == 131
+    assert totals["claims_pass"] == 141
     assert totals["claims_fail"] == 1
     assert totals["claims_unverified"] == 0
     failed = [name for name, r in reports if r["verdict"] == "fail"]
