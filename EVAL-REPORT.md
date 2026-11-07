@@ -240,11 +240,16 @@ python3; reports at `evals/reports/judgebias/`):
   without ground truth — that is the measured ceiling.
 
 Full suite: pytest 206 passed, 0 failed (project venv, Python
-3.12; 190 before, 16 new). Pushed to
-Ash-projects-personal/trustrun main via the GitHub connector
-(remote HEAD re-checked before push; commit hash recorded after
-push). This push also carries the previously unpushed round-11 and
-round-12 eval files (remote was still at round 10, 362115fd).
+3.12; 190 before, 16 new). Push note (corrected 2026-11-06 ~21:17
+CST): my own push-files call was interrupted by a service restart
+and verified not to have landed (remote HEAD still 362115fd
+afterward), so no re-push was made. The files landed on the remote
+in the concurrent eval-loop consolidated push efab531a (2026-11-06
+~20:40 CST, 212 files), which carried this run's JudgeBenchAdopt
+files plus the previously unpushed round-11 and round-12 eval files
+(remote was still at round 10, 362115fd). Verified byte-identical
+at efab531a: judge_bias_scenarios.py, run_judge_bias_scenarios.py,
+test_judge_bias.py, PAPER.md, judgebias summary.json, EVAL-REPORT.md.
 
 Queue items still open: TRUSTRUN-SilentEgress (blocked — 2026-11-05
 23:00 build halt, Ash's call), TRUSTRUN-ToolMetaInject,
