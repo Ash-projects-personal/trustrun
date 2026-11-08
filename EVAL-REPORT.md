@@ -4,6 +4,44 @@ Measured numbers only. Nothing here is estimated, projected, or
 invented. Each entry names what was run, the exact command or call,
 and the result. Updated every build-queue run that changes the code.
 
+## 2026-11-07 ~22:30 CST — build loop: ContractTarget + PassKTarget shipped
+
+**ContractTarget** (`trustrun/contract/calibration.py`,
+`evals/run_contract_target.py`, `tests/test_calibration.py`):
+`calibrate_judge` runs labeled claim/verdict pairs through
+`judge_claim_trials` and reports agreement with the labeled verdicts,
+mean flip rate, and Fleiss' kappa. Run:
+`python3 evals/run_contract_target.py` — 48 pairs (6 agents x 8
+tasks, one clean run each, labeled pass/fail by expected-answer
+containment), panel = strict contains judge + noisy judge flipping
+10% (seeded, a stated test instrument), trials 11. Measured:
+**agreement 1.000, mean flip rate 0.057, Fleiss kappa 0.761**.
+Target instrument is Cognition FrontierCode 2.0 (132 private tasks,
+maintainer-merge grading, Opus 5.5 45.5% pass, Claude Sonnet 4.5
+33.6%); FrontierCode is private, so this calibrates the same judge
+machinery on Trustrun's own labeled corpus and records the gap.
+
+**PassKTarget** (`trustrun/consistency/pass_at_k`,
+`evals/run_passk_target.py`, `tests/test_passk.py`): tau-bench
+estimator 1 - C(n-c, k) / C(n, k) over judged runs. Run:
+`python3 evals/run_passk_target.py` — 6 agents x 8 tasks, k=5,
+seed 0. Measured: **overall pass@1 = pass@4 = pass@5 = 0.6875**;
+per agent: hardened 1.0, reflection 1.0, react 0.625,
+plan_execute 0.625, guardrail_rag 0.5, rag 0.375. The curves are
+flat because the clean-room agents are deterministic: all 5 runs
+agree, so pass@k adds nothing over pass@1 here; the curve becomes
+informative only with stochastic agents (keyed rounds skip until
+POLLINATIONS_KEY returns). Reference points from other agents on
+other tasks, not same-agent comparisons: tau2-bench GPT-4.1 Pass^4
+57.5% retail held-out, 67.5% with the ALTK-Evolve playbook;
+tau3-bench Mercury 2.5 96.0% Telecom.
+
+Suite: `python3 -m pytest -q` (project venv, Python 3.12) ->
+**285 passed, 0 failed** (269 + 16 new). Labeled rows added: 48
+contract-target pairs + 48 pass@k records (240 repeated runs) = 96;
+running total 807 + 96 = **903**.
+
+
 ## 2026-11-07 ~20:35 CST — eval loop: labeled evals round 18 (48 new labeled runs; eleventh seed-stable round)
 
 **Round 18 run**: `python3 evals/run_evals_round18.py` (system python3,

@@ -66,9 +66,47 @@ seeded agent that is correct on some runs and wrong or gamed on
 others.
 """
 
+import math
 import random
 
 from trustrun.stress.taxonomy import CHAIN_DISCONTINUITY, chain_band
+
+
+def pass_at_k(outcomes, k):
+    """Pass@k from a list of per-run outcomes, tau-bench style.
+
+    outcomes: a list of per-run "completed" values (True, False, or
+      "unverified") as recorded by score_repeated_runs.
+    k: the number of sampled runs, a positive integer.
+
+    The estimator is the tau-bench one: with n judged runs of which c
+    passed, pass@k is the probability that at least one of k sampled
+    runs passes, 1 - C(n-c, k) / C(n, k). Unverified runs are excluded
+    from n. Returns "unverified" when fewer than k judged runs exist,
+    or when k exceeds the judged count. This is the calibration axis
+    tau2-bench reports as Pass^4 (GPT-4.1, 57.5% on the retail
+    held-out set, rising to 67.5% with the ALTK-Evolve playbook) and
+    BenchLM reports as tau3-bench pass rates (Mercury 2.5, 96.0% on
+    Telecom). Those published numbers are reference points from other
+    agents on other tasks, not same-agent comparisons: same-agent
+    calibration requires running the tau2-bench tasks themselves, which
+    Trustrun does not ship. This function exists so Trustrun's pass^k
+    reporting is in tau2-bench's format when that data exists.
+    """
+    if isinstance(k, bool) or not isinstance(k, int) or k < 1:
+        raise TypeError("k must be a positive integer")
+    if not isinstance(outcomes, list):
+        raise TypeError("outcomes must be a list")
+    judged = [o for o in outcomes if o is True or o is False]
+    n = len(judged)
+    if n < k:
+        return "unverified"
+    c = sum(1 for o in judged if o is True)
+    if c == 0:
+        return 0.0
+    if n - c < k:
+        return 1.0
+    return 1.0 - math.comb(n - c, k) / math.comb(n, k)
 
 _DEMO_ANSWER = "The answer is Paris."
 
