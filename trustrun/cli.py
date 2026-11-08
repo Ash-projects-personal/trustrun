@@ -38,6 +38,7 @@ from trustrun.contract import verify_delivery
 from trustrun.contract.side_effects import effects_from_trace
 from trustrun.data import audit_dataset
 from trustrun.stress import replay_attack
+from trustrun.stress.regression import record_from_result, replay_regression
 from trustrun.stress.taxonomy import chain_band
 
 SECTIONS = ("contract", "stress", "consistency", "data")
@@ -448,7 +449,8 @@ def _overall_verdict(section_verdicts):
     return "READY"
 
 
-def run_audit(agent, task, data_path=None, seed=0, k=5):
+def run_audit(agent, task, data_path=None, seed=0, k=5,
+              regression_registry=None):
     """Audit an agent on a task and return the full trust report dict.
 
     agent: callable taking the task text and returning a dict with a
@@ -468,6 +470,16 @@ def run_audit(agent, task, data_path=None, seed=0, k=5):
     data_path: optional path to a JSONL file of training records.
     seed: random seed so the audit is reproducible.
     k: number of repeated runs in the consistency section.
+    regression_registry: optional registry dict (see
+        trustrun.stress.regression). When given, open failures
+        recorded for this task are replayed against this agent first,
+        then this run's failures are recorded into the registry, and
+        the report gains a top-level "regression" key with the
+        replay outcome. The overall verdict is unchanged: regression
+        status is advisory, not a fifth section, so round
+        comparability is preserved. Replay re-runs the agent, so for
+        stateful agents it advances their state; the clean-room
+        agents are stateless.
 
     Returns a dict with the four sections and the overall verdict.
     Anything a module cannot determine stays unverified and never
@@ -512,7 +524,7 @@ def run_audit(agent, task, data_path=None, seed=0, k=5):
         "data": data,
     }
     verdict = _overall_verdict([s["verdict"] for s in sections.values()])
-    return {
+    report = {
         "agent": agent_name,
         "task": text,
         "k": k,
@@ -521,6 +533,29 @@ def run_audit(agent, task, data_path=None, seed=0, k=5):
         "sections": sections,
         "verdict": verdict,
     }
+    if regression_registry is not None:
+        if not isinstance(regression_registry, dict) or not isinstance(
+                regression_registry.get("failures"), dict):
+            raise TypeError("regression_registry must be a registry dict")
+        # Replay what is already open for this task, then record
+        # this run's failures. Replay first so a failure this run
+        # newly shows is not "replayed" in the same run; for
+        # deterministic agents the replay and this run's battery
+        # agree, and where they disagree the battery wins because
+        # record_from_result runs after.
+        replayed = replay_regression(
+            agent, task, regression_registry, seed=seed,
+            tools_capable=tools_capable,
+        )
+        recorded = record_from_result(regression_registry, report, task)
+        report["regression"] = {
+            "recorded": recorded,
+            "replayed": replayed["replayed"],
+            "still_failing": replayed["still_failing"],
+            "fixed": replayed["fixed"],
+            "unverified": replayed["unverified"],
+        }
+    return report
 
 
 def _format_value(value):
@@ -657,6 +692,27 @@ def format_report(report):
     if data["note"]:
         lines.append("  note: %s" % data["note"])
     lines.append("")
+
+    regression = report.get("regression")
+    if regression is not None:
+        lines.append(
+            "[regression] replayed %d, %d still failing, %d fixed, "
+            "%d unverified, %d recorded this run"
+            % (
+                regression["replayed"],
+                len(regression["still_failing"]),
+                len(regression["fixed"]),
+                len(regression["unverified"]),
+                len(regression["recorded"]),
+            )
+        )
+        for key in regression["still_failing"]:
+            lines.append("  still failing: %s" % key)
+        for key in regression["fixed"]:
+            lines.append("  fixed: %s" % key)
+        for key in regression["unverified"]:
+            lines.append("  unverified: %s" % key)
+        lines.append("")
 
     lines.append("Overall: %s" % report["verdict"])
     return "\n".join(lines)

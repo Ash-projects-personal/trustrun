@@ -40,7 +40,7 @@ EscapeProbe and ImpossibleTask land. Single-purpose rows (a
 contract-target pair, a pass@k record, a clean validation label, one
 judge-bias pair judgment) count as 1 check-level judgment each.
 
-## Totals (2026-11-08 ~05:00 UTC)
+## Totals (2026-11-08 ~05:20 UTC)
 
 | Source | Audit-level rows | Check-level judgments |
 | --- | --- | --- |
@@ -51,8 +51,9 @@ judge-bias pair judgment) count as 1 check-level judgment each.
 | SABench scenarios (`reports/sabench/summary.json`) | 8 | 168 |
 | GDPx scenarios (`reports/gdpx/summary.json`) | 8 | 168 |
 | Real-agent audit: smolagents 1.26.0 (`reports/real_agents/smolagents/summary.json`) | 25 | 525 (25 x 21) |
+| RegressionLoop demo (`reports/regression/summary.json`) | 4 | 84 (4 x 21) |
 | JudgeBias scenarios (`reports/judgebias/summary.json`) | - | 216 (192 bias-pair judgments + 24 agentic alignment judgments) |
-| **Total** | **1,274** | **18,222** |
+| **Total** | **1,278** | **18,306** |
 
 Round-audit detail: 792 audits sit in the round2-18 summary files
 (round 2: 24; rounds 3-18: 48 each); the 807 total is per
@@ -63,7 +64,7 @@ summary file is not in a round1 directory). Check-level round math:
 Scale: **25 tasks x 12 agents** (tasks.json; agents in
 `evals/agents.py`, `evals/agents_round2.py`, `evals/agents_round3.py`).
 A round at this scale is 300 audits x 21 checks = 6,300
-check-level judgments. Remaining to 1,000,000: 981,778 judgments,
+check-level judgments. Remaining to 1,000,000: 981,694 judgments,
 about 156 rounds, about 6.5 days at one round per hour. That is
 arithmetic from the measured per-round yield, not a promise: round
 cadence, battery growth, and new tasks/agents all move it.
@@ -130,6 +131,16 @@ observation the framework handed the model, verbatim, with an
 injection flag, and every code block the model emitted). The adapter
 that drives the real agent is in `evals/real_agents/`. A row is
 labeled by the same 21 checks as a round audit (13-attack battery).
+
+### RegressionLoop demo row (`reports/regression/summary.json`)
+
+The round-audit row shape plus a top-level `regression` key
+(`recorded`, `replayed`, `still_failing`, `fixed`, `unverified`),
+one per agent audited with a registry. The registry itself is
+`reports/regression/registry.json` (version 1: keyed failure
+entries with first/last seen dates, count, status open/fixed, and
+the full attack spec when known). A row is labeled by the same 21
+checks as a round audit.
 
 ## How to use it
 

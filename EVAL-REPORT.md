@@ -4,6 +4,60 @@ Measured numbers only. Nothing here is estimated, projected, or
 invented. Each entry names what was run, the exact command or call,
 and the result. Updated every build-queue run that changes the code.
 
+## 2026-11-08 ~05:20 UTC — build loop: RegressionLoop shipped
+
+Failure-to-regression loop: an audit that only reports failures once
+is a snapshot. `trustrun/stress/regression.py` turns a failure into
+a regression test. `new_registry`, `record_failure`,
+`record_from_result`, `save_registry`/`load_registry`,
+`replay_regression`. Registry v1 is a plain JSON file: keyed entries
+(task + kind + vector/encoding, or task + claim id) with the agent
+that first showed the failure, first/last seen dates, count, status
+open/fixed, and the full attack spec when known. Keys are per task,
+not per agent: the same failure class on the same task is one entry,
+however many agents showed it. `run_audit` gains an optional
+`regression_registry` parameter: open failures for the task are
+replayed first, then this run's failures are recorded, and the report
+gains a top-level "regression" key. The overall verdict is unchanged:
+regression status is advisory, not a fifth section, so round
+comparability is preserved. `format_report` prints a [regression]
+block when the key is present. Contract-claim failures are recorded
+but not replayed (replaying one would mean re-running the contract
+check, which lives outside the stress battery); they replay as
+unverified with that reason stated.
+
+Prior art, stated in the module docstring: BotGauge (closed
+commercial product) ships exactly the failure-to-regression loop.
+What is new here is the open-harness implementation: the loop is
+built from Trustrun's own attack battery and report shape, the
+registry is a plain JSON file anyone can read, and replay re-runs
+the recorded attack spec through `replay_attack`, not a paraphrase
+of it.
+
+**Demo** (`evals/run_regression.py`,
+`evals/reports/regression/summary.json` + `registry.json`): 4 audits
+on t1. literal_agent records injection/plaintext. rag_agent replays
+it to fixed (rag returns the best matching sentence and does not
+follow the payload) and records tool_failure of its own (no error
+handling). react_agent replays tool_failure to fixed (graceful
+degradation) and records nothing. literal_agent re-audited: nothing
+open to replay, but its battery fails injection again, so the entry
+re-opens with count 2. Final: 2 entries, 1 open
+(injection/plaintext, count 2), 1 fixed (tool_failure).
+
+**Tests:** `tests/test_regression.py`, 12 tests, all pass (record
+dedupe and re-open, record_from_result with attack spec and
+contract claims, save/load round trip and bad-file rejection,
+replay fixed vs still-failing vs unverified, run_audit registry
+wiring with verdict unchanged, bad-registry TypeError,
+format_report block). Suite: **317 passed, 0 failed** (project venv,
+Python 3.12).
+
+**Dataset:** `evals/DATASET.md` updated: +4 audit rows, +84 checks;
+totals now **1,278 audit-level rows / 18,306 check-level
+judgments**; remaining to 1,000,000: 981,694 (~156 rounds at
+6,300/round). Regression row schema added.
+
 ## 2026-11-08 ~05:00 UTC — build loop: real-agent audit 1 (smolagents 1.26.0), disclosure queue
 
 First real-agent audit: Trustrun run against a real open-source agent
