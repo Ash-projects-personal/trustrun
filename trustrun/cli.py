@@ -20,9 +20,9 @@ In code:
     report = run_audit(agent, task, data_path="train.jsonl", seed=0, k=5)
 
 A task is a dict with "text", "expect", and optional "tools",
-"variants", "rubric", "contract", "misleading_suggestion", and
-"chain_length" (the chain length of the audited workflow, for the RHB
-chain-5+ annotation).
+"variants", "rubric", "contract", "misleading_suggestion",
+"authorization", "effect_kinds", and "chain_length" (the chain length
+of the audited workflow, for the RHB chain-5+ annotation).
 See the module docstrings.
 """
 
@@ -35,6 +35,7 @@ import os
 from trustrun import __version__
 from trustrun.consistency import score_repeated_runs
 from trustrun.contract import verify_delivery
+from trustrun.contract.side_effects import effects_from_trace
 from trustrun.data import audit_dataset
 from trustrun.stress import replay_attack
 from trustrun.stress.taxonomy import chain_band
@@ -185,8 +186,18 @@ def _default_contract(text, expect):
     }
 
 
-def _contract_section(agent, tools_capable, tools, text, expect, contract):
-    """Judge one agent output against the task contract."""
+def _contract_section(agent, tools_capable, tools, text, expect, contract,
+                      authorization=None, effect_kinds=None,
+                      reference_effects=None):
+    """Judge one agent output against the task contract.
+
+    When the task carries an authorization set, the recorded tool trace
+    is also scored judge-free against it (see
+    trustrun/contract/side_effects.py) and the result rides on the
+    contract section as "side_effects". A task with an authorization
+    set but no recorded trace reports side effects unverified, never
+    clean.
+    """
     note = ""
     try:
         output = _call_agent(agent, tools_capable, tools, text)
@@ -211,9 +222,18 @@ def _contract_section(agent, tools_capable, tools, text, expect, contract):
                 "from, nothing to check the output against"
             ),
         }
-    result = verify_delivery(contract, output)
+    if authorization is not None and not isinstance(authorization, dict):
+        raise ValueError("task authorization must be a dict")
+    effects = None
+    if authorization is not None:
+        trace = output.get("tool_trace")
+        if isinstance(trace, list):
+            effects = effects_from_trace(trace, effect_kinds)
+    result = verify_delivery(
+        contract, output, effects=effects, authorization=authorization,
+        reference_effects=reference_effects)
     mapping = {"pass": "READY", "unverified": "REVIEW", "fail": "BLOCK"}
-    return {
+    section = {
         "verdict": mapping[result["verdict"]],
         "module_verdict": result["verdict"],
         "passed": result["passed"],
@@ -222,6 +242,9 @@ def _contract_section(agent, tools_capable, tools, text, expect, contract):
         "claims": result["claims"],
         "note": note,
     }
+    if "side_effects" in result:
+        section["side_effects"] = result["side_effects"]
+    return section
 
 
 def _tool_channel_unmeasured(attack):
@@ -435,7 +458,13 @@ def run_audit(agent, task, data_path=None, seed=0, k=5):
         "variants", "rubric", "contract", and "misleading_suggestion"
         (the confident but wrong value the default battery's
         misleading-principal attacks assert; without it those two
-        attacks report unverified).
+        attacks report unverified). A task may also carry
+        "authorization" (a per-task authorization set, see
+        trustrun/contract/side_effects.py) and "effect_kinds"
+        ({tool: kind}); when it does, the contract section also scores
+        the recorded tool trace judge-free for unauthorized side
+        effects. "reference_effects" (a minimal [{tool, target}] list)
+        lets the oracle count surplus steps against it.
     data_path: optional path to a JSONL file of training records.
     seed: random seed so the audit is reproducible.
     k: number of repeated runs in the consistency section.
@@ -459,7 +488,10 @@ def run_audit(agent, task, data_path=None, seed=0, k=5):
     agent_name = getattr(agent, "__name__", None) or type(agent).__name__
 
     contract = _contract_section(
-        agent, tools_capable, tools, text, expect, task.get("contract")
+        agent, tools_capable, tools, text, expect, task.get("contract"),
+        authorization=task.get("authorization"),
+        effect_kinds=task.get("effect_kinds"),
+        reference_effects=task.get("reference_effects"),
     )
     stress = _stress_section(
         agent,
@@ -524,6 +556,27 @@ def format_report(report):
         if claim.get("agent_error"):
             line += " [agent errored, not a wrong answer]"
         lines.append(line)
+    side = contract.get("side_effects")
+    if side is not None:
+        lines.append("  side effects: %s. %s" % (side["verdict"], side["evidence"]))
+        lines.append(
+            "    unrequested destructive: %d, duplicate writes: %d, "
+            "redundant reads: %d, surplus steps: %s, confirmed "
+            "destructive: %d, unconfirmed destructive: %d"
+            % (
+                side["unrequested_destructive"],
+                side["duplicate_writes"],
+                side["redundant_reads"],
+                side["surplus_steps"],
+                side["confirmed_destructive"],
+                side["unconfirmed_destructive"],
+            )
+        )
+        for bad in side["unauthorized"]:
+            lines.append(
+                "    unauthorized: %s %s. %s"
+                % (bad["tool"], bad["target"], bad["reason"])
+            )
     if contract["note"]:
         lines.append("  note: %s" % contract["note"])
     lines.append("")
