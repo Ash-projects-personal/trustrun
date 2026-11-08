@@ -40,7 +40,7 @@ EscapeProbe and ImpossibleTask land. Single-purpose rows (a
 contract-target pair, a pass@k record, a clean validation label, one
 judge-bias pair judgment) count as 1 check-level judgment each.
 
-## Totals (2026-11-08 ~04:40 UTC)
+## Totals (2026-11-08 ~05:00 UTC)
 
 | Source | Audit-level rows | Check-level judgments |
 | --- | --- | --- |
@@ -50,8 +50,9 @@ judge-bias pair judgment) count as 1 check-level judgment each.
 | Tasks/agents validation (`reports/validation/summary.json`) | 330 (300 clean + 30 full audits) | 930 (300 + 30 x 21) |
 | SABench scenarios (`reports/sabench/summary.json`) | 8 | 168 |
 | GDPx scenarios (`reports/gdpx/summary.json`) | 8 | 168 |
+| Real-agent audit: smolagents 1.26.0 (`reports/real_agents/smolagents/summary.json`) | 25 | 525 (25 x 21) |
 | JudgeBias scenarios (`reports/judgebias/summary.json`) | - | 216 (192 bias-pair judgments + 24 agentic alignment judgments) |
-| **Total** | **1,249** | **17,697** |
+| **Total** | **1,274** | **18,222** |
 
 Round-audit detail: 792 audits sit in the round2-18 summary files
 (round 2: 24; rounds 3-18: 48 each); the 807 total is per
@@ -62,7 +63,7 @@ summary file is not in a round1 directory). Check-level round math:
 Scale: **25 tasks x 12 agents** (tasks.json; agents in
 `evals/agents.py`, `evals/agents_round2.py`, `evals/agents_round3.py`).
 A round at this scale is 300 audits x 21 checks = 6,300
-check-level judgments. Remaining to 1,000,000: 982,303 judgments,
+check-level judgments. Remaining to 1,000,000: 981,778 judgments,
 about 156 rounds, about 6.5 days at one round per hour. That is
 arithmetic from the measured per-round yield, not a promise: round
 cadence, battery growth, and new tasks/agents all move it.
@@ -121,6 +122,15 @@ unconfirmed destructive calls) for SABench.
 (8 base pairs x 12 types x 2 judges), plus the agentic alignment
 per-case records (12 traces x 2 judges).
 
+### Real-agent audit row (`reports/real_agents/<name>/summary.json`)
+
+The round-audit row shape, one per real agent x task, plus
+`evidence.json` beside it: every interesting run's model log (each
+observation the framework handed the model, verbatim, with an
+injection flag, and every code block the model emitted). The adapter
+that drives the real agent is in `evals/real_agents/`. A row is
+labeled by the same 21 checks as a round audit (13-attack battery).
+
 ## How to use it
 
 - Reproduce any row: run the script named in the round's
@@ -146,4 +156,8 @@ per-case records (12 traces x 2 judges).
   other 23. The clarification channel is exercised by 1 of 12 agents
   (clarification_agent).
 - No real-model agent is in the dataset yet. The real-agent audit
-  rotation (see the research log) is the next source of rows.
+  rotation (see the research log) is the next source of rows. First
+  real-agent rows landed 2026-11-08: smolagents 1.26.0 CodeAgent,
+  25 audits, 525 checks — but the model role was still a
+  deterministic stub, not a real LLM, so the pass@k axis still has
+  no sampling variance. Keyed-model agents are needed for that.
