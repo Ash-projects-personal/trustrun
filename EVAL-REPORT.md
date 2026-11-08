@@ -76,14 +76,23 @@ No new real-model failure mode (no keyed runs to find one in).
 EVAL-REPORT entry claimed its push carried the round-15, round-16,
 and round-17 eval files, the side-effect oracle files, and the
 updated EVAL-REPORT.md, but no commit after 351eb19e (2026-11-07
-03:18 UTC) exists on main; that push never landed. This run's push
-therefore carries the round-15, round-16, round-17, and round-18
-eval files, the side-effect oracle files, and the updated
-EVAL-REPORT.md (push SHA: PENDING — recorded in the sync record and
-research log after list_commits verification). Lesson restated again:
-a log entry claiming a push without a recorded SHA means it did not
-land — the SHA is the only proof. Note: the modified
-`.github/workflows/ci.yml` is NOT in this push; the connector cannot
+03:18 UTC) existed on main; that push never landed. This run's own
+first push attempt (full 896-file snapshot) was interrupted by a
+service restart at ~20:40 CST and its outcome was unconfirmed. When
+the run resumed (~22:10 CST), remote HEAD had moved to d155e6e9
+(2026-11-08 04:09 UTC) via a concurrent build-loop push — "Side-effect
+oracle (SABench + CAREFUL-Bench) ... JudgeRedesign + labeled evals
+rounds 15-16 catch-up" — which carried this run's EVAL-REPORT.md
+round-18 section and the round-15/16 files but NOT the round-17/18
+scripts and reports. This run verified remote vs local content
+file-by-file (blob SHA comparison) and then pushed the remainder in
+d5acd058 ("Eval loop: labeled evals rounds 17-18 catch-up ... +
+round 2 reports"), verified via list_commits and a remote read of
+evals/reports/round18/summary.json (blob SHA matches local). Both
+SHAs are recorded in the sync record. Lesson restated again: a log
+entry claiming a push without a recorded SHA means it did not land —
+the SHA is the only proof. Note: the modified
+`.github/workflows/ci.yml` is NOT in either push; the connector cannot
 push workflow paths, per the loop rule — that file goes via the web
 UI.
 
