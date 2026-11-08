@@ -3,11 +3,14 @@
 Usage:
     trustrun audit <agent> <task> [--tools <dotted>] [--data records.jsonl]
                    [--k 5] [--seed 0]
+    trustrun verify <report.txt>
 
 Runs the four module audit and prints one trust report. Each section
 returns READY, REVIEW, or BLOCK with evidence attached. The overall
 verdict is BLOCK if any section blocks, REVIEW if any section needs
-review, else READY.
+review, else READY. Every report carries a SHA-256 hash chain over
+its verdicts ([evidence] block); `trustrun verify` re-checks the
+chain from the report text alone.
 
 The agent is a callable. The simple form takes the task text and
 returns a dict with a "result" key. Agents that also accept a tools
@@ -37,6 +40,11 @@ from trustrun.consistency import score_repeated_runs
 from trustrun.contract import verify_delivery
 from trustrun.contract.side_effects import effects_from_trace
 from trustrun.data import audit_dataset
+from trustrun.evidence import (
+    build_anchor,
+    format_anchor_lines,
+    verify_report_text,
+)
 from trustrun.stress import replay_attack
 from trustrun.stress.regression import record_from_result, replay_regression
 from trustrun.stress.taxonomy import chain_band
@@ -481,7 +489,11 @@ def run_audit(agent, task, data_path=None, seed=0, k=5,
         stateful agents it advances their state; the clean-room
         agents are stateless.
 
-    Returns a dict with the four sections and the overall verdict.
+    Returns a dict with the four sections, the overall verdict, and
+    an "evidence" anchor: a SHA-256 hash chain over the report's
+    verdict records (see trustrun.evidence). The chain covers the
+    four sections, the regression replay when present, and the
+    overall verdict, so an edited report fails verification.
     Anything a module cannot determine stays unverified and never
     becomes a pass.
     """
@@ -555,6 +567,8 @@ def run_audit(agent, task, data_path=None, seed=0, k=5,
             "fixed": replayed["fixed"],
             "unverified": replayed["unverified"],
         }
+    # Anchor last, so the chain covers the regression replay too.
+    report["evidence"] = build_anchor(report)
     return report
 
 
@@ -714,6 +728,11 @@ def format_report(report):
             lines.append("  unverified: %s" % key)
         lines.append("")
 
+    anchor = report.get("evidence")
+    if anchor is not None:
+        lines.extend(format_anchor_lines(anchor))
+        lines.append("")
+
     lines.append("Overall: %s" % report["verdict"])
     return "\n".join(lines)
 
@@ -782,7 +801,31 @@ def build_parser():
         "--k", type=_positive_int, default=5, help="repeated runs"
     )
     audit.add_argument("--seed", type=int, default=0, help="random seed")
+
+    verify = sub.add_parser(
+        "verify", help="verify the evidence chain in a saved report"
+    )
+    verify.add_argument("report", help="path to a report text file")
     return parser
+
+
+def cmd_verify(args):
+    """Verify a saved report's evidence chain. Exit 0 when the
+    chain is valid, 1 when it is tampered or missing."""
+    with open(args.report, encoding="utf-8") as handle:
+        text = handle.read()
+    result = verify_report_text(text)
+    if result["valid"]:
+        print("VALID evidence chain, head %s" % result["head"])
+        return 0
+    if result["bad_index"] is not None:
+        print(
+            "TAMPERED at entry %d: %s"
+            % (result["bad_index"], result["reason"])
+        )
+    else:
+        print("TAMPERED: %s" % result["reason"])
+    return 1
 
 
 def cmd_audit(args):
@@ -823,6 +866,11 @@ def main(argv=None):
     if args.command == "audit":
         try:
             cmd_audit(args)
+        except _CLI_ERRORS as exc:
+            parser.exit(2, "trustrun: error: %s\n" % exc)
+    elif args.command == "verify":
+        try:
+            return cmd_verify(args)
         except _CLI_ERRORS as exc:
             parser.exit(2, "trustrun: error: %s\n" % exc)
     return 0

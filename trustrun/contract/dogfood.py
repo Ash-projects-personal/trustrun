@@ -36,10 +36,12 @@ PACT_EXPERIMENTS = Path.home() / "workspace" / "projects" / "pact-agentic-commer
 # case (2026-11-05, qualities=("cheat",) in real_cases.py, expected
 # outcome "refunded") was added 2026-11-05; the "AC repair service, cheat
 # technician" case (2026-11-07, qualities=("cheat",) in real_cases.py,
-# expected outcome "refunded") was added 2026-11-07). A cheat judged against the
+# expected outcome "refunded") was added 2026-11-07; the "Spreadsheet
+# cleanup and report, cheat analyst" case (0/5 checks, refunded, bond
+# slashed) was added 2026-11-08). A cheat judged against the
 # honest contract yields a wrong "fail" verdict, so this set must stay
 # complete.
-CHEAT_CASES = {1, 2, 17, 18, 19, 20, 21, 22, 23}
+CHEAT_CASES = {1, 2, 17, 18, 19, 20, 21, 22, 23, 24}
 
 
 def _parse_checks(checks):

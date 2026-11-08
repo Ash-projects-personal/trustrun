@@ -165,14 +165,17 @@ def test_dogfood_full_counts():
     # updated 2026-11-06 when the "API integration task, cheat
     # integrator" case (0/5 checks, refunded, bond slashed) was added;
     # updated 2026-11-07 when the "AC repair service, cheat
-    # technician" case (0/5 checks, refunded, bond slashed) was added.
+    # technician" case (0/5 checks, refunded, bond slashed) was added;
+    # updated 2026-11-08 when the "Spreadsheet cleanup and report,
+    # cheat analyst" case (0/5 checks, refunded, bond slashed) was
+    # added.
     # All cheat cases are labeled in CHEAT_CASES, so they are judged
     # against the cheat contract and PASS (correctly caught cheats).
-    assert len(reports) == 38
-    assert totals["pass"] == 37
+    assert len(reports) == 39
+    assert totals["pass"] == 38
     assert totals["fail"] == 1
     assert totals["unverified"] == 0
-    assert totals["claims_pass"] == 146
+    assert totals["claims_pass"] == 151
     assert totals["claims_fail"] == 1
     assert totals["claims_unverified"] == 0
     failed = [name for name, r in reports if r["verdict"] == "fail"]
