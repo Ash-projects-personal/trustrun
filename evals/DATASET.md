@@ -33,39 +33,47 @@ The battery grew over time, so the per-audit count depends on the round:
 | --- | --- | --- |
 | 1-3 | 9 attacks | 17 |
 | 4-8 | 11 attacks | 19 |
-| 9-18 | 13 attacks | 21 |
+| 9-19 | 13 attacks | 21 |
 
 The battery grows to 15 attacks (23 checks per audit) when
 EscapeProbe and ImpossibleTask land. Single-purpose rows (a
 contract-target pair, a pass@k record, a clean validation label, one
 judge-bias pair judgment) count as 1 check-level judgment each.
 
-## Totals (2026-11-08 ~05:20 UTC)
+## Totals (2026-11-08 ~13:30 UTC)
 
 | Source | Audit-level rows | Check-level judgments |
 | --- | --- | --- |
-| Labeled eval rounds 1-18 (`reports/round*/summary.json`) | 807 | 16,119 |
+| Labeled eval rounds 1-23 (`reports/round*/summary.json`) | 2,307 | 47,619 |
 | ContractTarget calibration (`reports/contract_target/summary.json`) | 48 | 48 |
 | PassKTarget calibration (`reports/passk_target/summary.json`) | 48 | 48 |
 | Tasks/agents validation (`reports/validation/summary.json`) | 330 (300 clean + 30 full audits) | 930 (300 + 30 x 21) |
 | SABench scenarios (`reports/sabench/summary.json`) | 8 | 168 |
 | GDPx scenarios (`reports/gdpx/summary.json`) | 8 | 168 |
 | Real-agent audit: smolagents 1.26.0 (`reports/real_agents/smolagents/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: LangChain create_react_agent, langgraph 1.2.20 + langchain-core 1.7.6 (`reports/real_agents/langchain/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: LlamaIndex ReActAgent, llama-index-core 0.14.25 (`reports/real_agents/llamaindex/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: CrewAI Agent, crewai 1.15.37 (`reports/real_agents/crewai/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Pydantic AI Agent, pydantic-ai 2.66.0 (`reports/real_agents/pydanticai/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: AutoGen AgentChat AssistantAgent, pyautogen 0.10.0 / autogen-agentchat 0.7.5 (`reports/real_agents/autogen/summary.json`) | 25 | 525 (25 x 21) |
 | RegressionLoop demo (`reports/regression/summary.json`) | 4 | 84 (4 x 21) |
 | JudgeBias scenarios (`reports/judgebias/summary.json`) | - | 216 (192 bias-pair judgments + 24 agentic alignment judgments) |
-| **Total** | **1,278** | **18,306** |
+| CheatCoverage verification (`reports/cheatcoverage-verify/summary.json`) | 36 | 756 (36 x 21) |
+| EvidenceAnchor verification (`reports/evidenceanchor-verify/summary.json`) | 36 | 756 (36 x 21) |
+| **Total** | **2,975** | **53,943** |
 
-Round-audit detail: 792 audits sit in the round2-18 summary files
-(round 2: 24; rounds 3-18: 48 each); the 807 total is per
-EVAL-REPORT.md and includes round 1 (15 audits, residual; its own
-summary file is not in a round1 directory). Check-level round math:
-15x17 + 24x17 + 48x17 + 5x48x19 + 10x48x21 = 16,119.
+Round-audit detail: 2,292 audits sit in the round2-23 summary files
+(round 2: 24; rounds 3-18: 48 each; rounds 19-23: 300 each); the 2,307 total
+is per EVAL-REPORT.md and includes round 1 (15 audits, residual;
+its own summary file is not in a round1 directory). Check-level
+round math:
+15x17 + 24x17 + 48x17 + 5x48x19 + 10x48x21 + 300x21 + 300x21 + 300x21 + 300x21 + 300x21 = 47,619.
 
 Scale: **25 tasks x 12 agents** (tasks.json; agents in
 `evals/agents.py`, `evals/agents_round2.py`, `evals/agents_round3.py`).
 A round at this scale is 300 audits x 21 checks = 6,300
-check-level judgments. Remaining to 1,000,000: 981,694 judgments,
-about 156 rounds, about 6.5 days at one round per hour. That is
+check-level judgments. Remaining to 1,000,000: 952,882 judgments,
+about 152 rounds, about 3.2 days at one round per 30 minutes. That is
 arithmetic from the measured per-round yield, not a promise: round
 cadence, battery growth, and new tasks/agents all move it.
 
@@ -169,6 +177,7 @@ checks as a round audit.
 - No real-model agent is in the dataset yet. The real-agent audit
   rotation (see the research log) is the next source of rows. First
   real-agent rows landed 2026-11-08: smolagents 1.26.0 CodeAgent,
-  25 audits, 525 checks — but the model role was still a
+  LangChain create_react_agent, and LlamaIndex ReActAgent, 25 audits
+  and 525 checks each — but the model role was still a
   deterministic stub, not a real LLM, so the pass@k axis still has
   no sampling variance. Keyed-model agents are needed for that.

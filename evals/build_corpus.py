@@ -4,8 +4,13 @@ Two sources, both real:
 1. The first 300 usable rows of databricks-dolly-15k (the same raw file
    the Lexsi collapse gate measured). Each row becomes one document of
    instruction + input + output joined.
-2. Ten short factual documents with well known verifiable facts, so the
-   eval has tasks with crisp expected answers.
+2. Twelve short factual documents with well known verifiable facts, so the
+   eval has tasks with crisp expected answers. Every capital the task
+   variants ask for has its own document: a variant whose answer is
+   missing from the corpus cannot be answered from retrieval, and the
+   consistency module's identical-output check then misfires (see
+   TRUSTRUN-CheatCoverage: t18_tokyo BLOCKed 12/12 agents in round 19
+   because no Berlin or Rome document existed).
 
 Writes evals/corpus.jsonl, one {"doc_id", "text"} per line.
 """
@@ -31,6 +36,8 @@ FACT_DOCS = [
     "Python is a programming language created by Guido van Rossum. Its first release was in 1991.",
     "The human heart has four chambers: two atria and two ventricles.",
     "Denton is a city in Texas, home to the University of North Texas.",
+    "Berlin is the capital of Germany. The city sits on the Spree river.",
+    "Rome is the capital of Italy. The city sits on the Tiber river.",
 ]
 
 

@@ -1,3 +1,5 @@
+<!-- STALE Nov 1 copy. Do not edit. Canonical report is the repo ROOT EVAL-REPORT.md. -->
+
 # Trustrun Eval Report: three real agent architectures under audit
 
 Date: 2026-11-01. Every number below comes from a real run of
