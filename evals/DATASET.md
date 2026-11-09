@@ -40,11 +40,11 @@ EscapeProbe and ImpossibleTask land. Single-purpose rows (a
 contract-target pair, a pass@k record, a clean validation label, one
 judge-bias pair judgment) count as 1 check-level judgment each.
 
-## Totals (2026-11-08 ~13:30 UTC)
+## Totals (2026-11-08 ~23:33 UTC)
 
 | Source | Audit-level rows | Check-level judgments |
 | --- | --- | --- |
-| Labeled eval rounds 1-23 (`reports/round*/summary.json`) | 2,307 | 47,619 |
+| Labeled eval rounds 1-29 (`reports/round*/summary.json`) | 4,107 | 85,419 |
 | ContractTarget calibration (`reports/contract_target/summary.json`) | 48 | 48 |
 | PassKTarget calibration (`reports/passk_target/summary.json`) | 48 | 48 |
 | Tasks/agents validation (`reports/validation/summary.json`) | 330 (300 clean + 30 full audits) | 930 (300 + 30 x 21) |
@@ -56,24 +56,27 @@ judge-bias pair judgment) count as 1 check-level judgment each.
 | Real-agent audit: CrewAI Agent, crewai 1.15.37 (`reports/real_agents/crewai/summary.json`) | 25 | 525 (25 x 21) |
 | Real-agent audit: Pydantic AI Agent, pydantic-ai 2.66.0 (`reports/real_agents/pydanticai/summary.json`) | 25 | 525 (25 x 21) |
 | Real-agent audit: AutoGen AgentChat AssistantAgent, pyautogen 0.10.0 / autogen-agentchat 0.7.5 (`reports/real_agents/autogen/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: OpenAI Agents SDK, openai-agents 0.24.0 (`reports/real_agents/openai_agents/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Haystack Agent, haystack-ai 3.4.1 (`reports/real_agents/haystack/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Semantic Kernel ChatCompletionAgent, semantic-kernel 1.47.0 (`reports/real_agents/sk/summary.json`) | 25 | 525 (25 x 21) |
 | RegressionLoop demo (`reports/regression/summary.json`) | 4 | 84 (4 x 21) |
 | JudgeBias scenarios (`reports/judgebias/summary.json`) | - | 216 (192 bias-pair judgments + 24 agentic alignment judgments) |
 | CheatCoverage verification (`reports/cheatcoverage-verify/summary.json`) | 36 | 756 (36 x 21) |
 | EvidenceAnchor verification (`reports/evidenceanchor-verify/summary.json`) | 36 | 756 (36 x 21) |
-| **Total** | **2,975** | **53,943** |
+| **Total** | **4,850** | **93,318** |
 
-Round-audit detail: 2,292 audits sit in the round2-23 summary files
-(round 2: 24; rounds 3-18: 48 each; rounds 19-23: 300 each); the 2,307 total
+Round-audit detail: 4,092 audits sit in the round2-29 summary files
+(round 2: 24; rounds 3-18: 48 each; rounds 19-29: 300 each); the 4,107 total
 is per EVAL-REPORT.md and includes round 1 (15 audits, residual;
 its own summary file is not in a round1 directory). Check-level
 round math:
-15x17 + 24x17 + 48x17 + 5x48x19 + 10x48x21 + 300x21 + 300x21 + 300x21 + 300x21 + 300x21 = 47,619.
+15x17 + 24x17 + 48x17 + 5x48x19 + 10x48x21 + 11x300x21 = 85,419.
 
 Scale: **25 tasks x 12 agents** (tasks.json; agents in
 `evals/agents.py`, `evals/agents_round2.py`, `evals/agents_round3.py`).
 A round at this scale is 300 audits x 21 checks = 6,300
-check-level judgments. Remaining to 1,000,000: 952,882 judgments,
-about 152 rounds, about 3.2 days at one round per 30 minutes. That is
+check-level judgments. Remaining to 1,000,000: 906,682 judgments,
+about 144 rounds, about 3.0 days at one round per 30 minutes. That is
 arithmetic from the measured per-round yield, not a promise: round
 cadence, battery growth, and new tasks/agents all move it.
 
@@ -176,8 +179,11 @@ checks as a round audit.
   (clarification_agent).
 - No real-model agent is in the dataset yet. The real-agent audit
   rotation (see the research log) is the next source of rows. First
-  real-agent rows landed 2026-11-08: smolagents 1.26.0 CodeAgent,
-  LangChain create_react_agent, and LlamaIndex ReActAgent, 25 audits
-  and 525 checks each — but the model role was still a
-  deterministic stub, not a real LLM, so the pass@k axis still has
-  no sampling variance. Keyed-model agents are needed for that.
+  real-agent rows landed 2026-11-08: nine frameworks audited so far
+  (smolagents 1.26.0, LangChain create_react_agent, LlamaIndex
+  ReActAgent, CrewAI 1.15.37, Pydantic AI 2.66.0, AutoGen 0.10.0 /
+  0.7.5, OpenAI Agents SDK 0.24.0, Haystack 3.4.1, Semantic Kernel
+  1.47.0), 25 audits and 525 checks each — but the model role was
+  still a deterministic stub, not a real LLM, so the pass@k axis
+  still has no sampling variance. Keyed-model agents are needed
+  for that.
