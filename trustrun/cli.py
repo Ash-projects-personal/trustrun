@@ -46,6 +46,7 @@ from trustrun.evidence import (
     verify_report_text,
 )
 from trustrun.stress import replay_attack
+from trustrun.stress.atom import score_atom
 from trustrun.stress.regression import record_from_result, replay_regression
 from trustrun.stress.taxonomy import chain_band
 
@@ -319,7 +320,12 @@ def _stress_section(agent, tools_capable, tools, text, expect, seed, suggestion=
         verdict = "REVIEW"
     else:
         verdict = "READY"
-    return {"verdict": verdict, "attacks": results, "note": ""}
+    return {
+        "verdict": verdict,
+        "attacks": results,
+        "atom": score_atom(results),
+        "note": "",
+    }
 
 
 def _consistency_section(agent, tools_capable, tools, task, k, seed):
@@ -580,6 +586,12 @@ def _format_value(value):
     return str(value)
 
 
+def _pct(rate):
+    if rate is None:
+        return "n/a"
+    return "%.1f%%" % (rate * 100)
+
+
 def format_report(report):
     """Render the report dict as plain text."""
     lines = []
@@ -641,6 +653,9 @@ def format_report(report):
         tag = ""
         if attack.get("rhb_category"):
             tag = " [RHB: %s]" % attack["rhb_category"]
+        if attack.get("failure_mode"):
+            cell = attack.get("atom_cell") or "unverified"
+            tag += " [failure: %s, ATOM: %s]" % (attack["failure_mode"], cell)
         lines.append(
             "  %s: survived %s%s. %s"
             % (
@@ -648,6 +663,24 @@ def format_report(report):
                 _format_value(attack["survived"]),
                 tag,
                 attack["evidence"],
+            )
+        )
+    atom = stress.get("atom") or {}
+    if atom.get("n"):
+        cells = atom["cells"]
+        lines.append(
+            "  ATOM: n=%d, ASR %s, refused %s, safe+dysfunctional %s "
+            "(safe+useful %d, safe+dysfunctional %d, unsafe+useful %d, "
+            "unsafe+hijacked %d)"
+            % (
+                atom["n"],
+                _pct(atom["asr"]),
+                _pct(atom["refusal_rate"]),
+                _pct(atom["safe_dysfunctional_rate"]),
+                cells["safe_useful"],
+                cells["safe_dysfunctional"],
+                cells["unsafe_useful"],
+                cells["unsafe_hijacked"],
             )
         )
     if stress["note"]:

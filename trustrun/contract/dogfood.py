@@ -5,7 +5,7 @@ experiments/real_cases_results.json and the attack results from
 experiments/adversarial_results.json in the Pact project, and judges each
 record against a contract built from the deal's own terms.
 
-Nothing here is invented. The 23 settlement cases and the 13 attack cases
+Nothing here is invented. The 27 settlement cases and the 13 attack cases
 are recorded runs. The deal type labels (honest or cheat) come from the
 case definitions in experiments/real_cases.py. The limit case is Pact's
 own documented verifier limit: a translation cheat that counting checks
@@ -38,10 +38,13 @@ PACT_EXPERIMENTS = Path.home() / "workspace" / "projects" / "pact-agentic-commer
 # technician" case (2026-11-07, qualities=("cheat",) in real_cases.py,
 # expected outcome "refunded") was added 2026-11-07; the "Spreadsheet
 # cleanup and report, cheat analyst" case (0/5 checks, refunded, bond
-# slashed) was added 2026-11-08). A cheat judged against the
+# slashed) was added 2026-11-08; the "Landing page copy, cheat
+# copywriter" case (0/5 checks, refunded, bond slashed) was added
+# 2026-11-09; the "Logo and brand kit, cheat designer" case (0/5
+# checks, refunded, bond slashed) was added 2026-11-10). A cheat judged against the
 # honest contract yields a wrong "fail" verdict, so this set must stay
 # complete.
-CHEAT_CASES = {1, 2, 17, 18, 19, 20, 21, 22, 23, 24}
+CHEAT_CASES = {1, 2, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}
 
 
 def _parse_checks(checks):
