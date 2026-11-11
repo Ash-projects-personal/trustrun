@@ -19,6 +19,10 @@ from judge_bias_scenarios import (  # noqa: E402
     AGENTIC_CASES,
     BASE_PAIRS,
     BIAS_TYPES,
+    EXTENDED_BIAS_TYPES,
+    NEUTRAL_FILENAME,
+    PERSON_FILENAME,
+    UNSPECIFIED_LABEL,
     bias_sensitivity_rate,
     dag_judge_with_gt,
     dag_judge_without_gt,
@@ -27,6 +31,7 @@ from judge_bias_scenarios import (  # noqa: E402
     inject,
     measure_agentic_alignment,
     measure_bias_profile,
+    measure_extended_profile,
     original_pair,
     strict_judge,
     surface_signal_judge,
@@ -77,6 +82,31 @@ def test_registry_paper_sample_counts():
         "race": 297,
     }
     assert sum(counts.values()) == 4504
+
+
+def test_extended_registry_has_two_probes():
+    # BiasExtend probes 13-14 are NOT JudgeBiasBench types: the
+    # paper's taxonomy has exactly 12, so they live in their own
+    # registry with their own papers. Neither paper reports a
+    # per-type test-set size in JudgeBiasBench's sense, so paper_n
+    # is None and the design numbers live in paper_design.
+    assert len(EXTENDED_BIAS_TYPES) == 2
+    ids = [b["id"] for b in EXTENDED_BIAS_TYPES]
+    assert ids == ["filename", "demographic_label"]
+    probes = {b["id"]: b["probe"] for b in EXTENDED_BIAS_TYPES}
+    assert probes == {"filename": 13, "demographic_label": 14}
+    dimensions = {b["id"]: b["dimension"] for b in EXTENDED_BIAS_TYPES}
+    assert dimensions == {
+        "filename": "provenance",
+        "demographic_label": "diversity",
+    }
+    for bias in EXTENDED_BIAS_TYPES:
+        assert bias["paper_n"] is None, bias["id"]
+        assert "arXiv:2611.0" in bias["paper_design"], bias["id"]
+    assert "2611.01829" in EXTENDED_BIAS_TYPES[0]["paper_design"]
+    assert "2611.02692" in EXTENDED_BIAS_TYPES[1]["paper_design"]
+    assert get_bias_type("filename")["id"] == "filename"
+    assert get_bias_type("demographic_label")["id"] == "demographic_label"
 
 
 def test_get_bias_type_unknown_raises():
@@ -135,6 +165,68 @@ def test_position_injection_swaps_order_only():
     assert pair["first"] == base["rejected"]
     assert pair["second"] == base["chosen"]
     assert pair["first_is_chosen"] is False
+
+
+def test_extended_injectors_attach_metadata_to_rejected_only():
+    # Probe 13: the rejected response carries the person-related
+    # filename, the chosen keeps the neutral one. Probe 14: the
+    # rejected response carries an explicit demographic label, the
+    # chosen is unspecified. Neither injector rewrites response
+    # text, so the quality ordering survives by construction.
+    base = BASE_PAIRS[0]
+    filename_pair = inject(base, "filename")
+    assert filename_pair["first_filename"] == NEUTRAL_FILENAME
+    assert filename_pair["second_filename"] == PERSON_FILENAME
+    assert filename_pair["first"] == base["chosen"]
+    assert filename_pair["second"] == base["rejected"]
+    label_pair = inject(base, "demographic_label")
+    assert label_pair["first_label"] == UNSPECIFIED_LABEL
+    assert label_pair["second_label"] == "female"
+    assert label_pair["first"] == base["chosen"]
+    assert label_pair["second"] == base["rejected"]
+    # Originals carry the neutral conditions on both responses.
+    original = original_pair(base)
+    assert original["first_filename"] == NEUTRAL_FILENAME
+    assert original["second_filename"] == NEUTRAL_FILENAME
+    assert original["first_label"] == UNSPECIFIED_LABEL
+    assert original["second_label"] == UNSPECIFIED_LABEL
+
+
+def test_extended_injection_preserves_quality_ordering():
+    # Same consistency rule as the 12 JudgeBiasBench types: the
+    # chosen response still carries its marker, the rejected its
+    # wrong marker, and neither carries the other's.
+    for bias in EXTENDED_BIAS_TYPES:
+        for base in BASE_PAIRS:
+            pair = inject(base, bias["id"])
+            chosen = _chosen_text(pair)
+            rejected = _rejected_text(pair)
+            assert base["marker"] in chosen, (bias["id"], base["id"])
+            assert base["marker"] not in rejected, (bias["id"], base["id"])
+            assert base["wrong_marker"] in rejected, (bias["id"], base["id"])
+            assert base["wrong_marker"] not in chosen, (bias["id"], base["id"])
+
+
+def test_extended_strict_judge_bsr_is_zero():
+    profile = measure_extended_profile(strict_judge)
+    assert profile["overall_bsr"] == 0.0
+    for row in profile["per_type"]:
+        assert row["bsr"] == 0.0, row["bias_type"]
+        assert row["orig_correct"] == 8, row["bias_type"]
+        assert row["flips"] == 0, row["bias_type"]
+
+
+def test_extended_surface_judge_bsr_is_one():
+    # The surface-signal stand-in reads the metadata channels too:
+    # a person-related filename and an explicit demographic label
+    # each outweigh the base pair's surface margin, so every
+    # originally-correct judgment flips. Measured, not assumed.
+    profile = measure_extended_profile(surface_signal_judge)
+    assert profile["overall_bsr"] == 1.0
+    for row in profile["per_type"]:
+        assert row["bsr"] == 1.0, row["bias_type"]
+        assert row["orig_correct"] == 7, row["bias_type"]
+        assert row["flips"] == 7, row["bias_type"]
 
 
 def test_strict_judge_bsr_is_zero_everywhere():
@@ -261,11 +353,25 @@ def test_runner_summary_matches_measured_profile():
     with open(path) as fh:
         summary = json.load(fh)
     assert summary["bias_types"] == 12
+    assert summary["extended_bias_probes"] == 2
     assert summary["agentic_cases"] == 6
     assert summary["agentic_traces"] == 12
     surface = summary["bias_profiles"]["surface_signal_judge"]
     strict = summary["bias_profiles"]["strict_judge"]
     assert surface["overall_bsr"] == 1.0
     assert strict["overall_bsr"] == 0.0
+    surface_ext = summary["extended_bias_profiles"]["surface_signal_judge"]
+    strict_ext = summary["extended_bias_profiles"]["strict_judge"]
+    assert surface_ext["overall_bsr"] == 1.0
+    assert strict_ext["overall_bsr"] == 0.0
+    assert [r["bias_type"] for r in surface_ext["per_type"]] == [
+        "filename",
+        "demographic_label",
+    ]
+    for row in surface_ext["per_type"]:
+        assert row["bsr"] == 1.0, row["bias_type"]
+        assert row["flips"] == 7, row["bias_type"]
+    for row in strict_ext["per_type"]:
+        assert row["bsr"] == 0.0, row["bias_type"]
     assert summary["agentic_alignment"]["with_ground_truth"]["overall"] == 1.0
     assert summary["agentic_alignment"]["without_ground_truth"]["overall"] == 0.75
