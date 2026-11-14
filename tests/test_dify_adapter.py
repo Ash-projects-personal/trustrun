@@ -82,6 +82,12 @@ PROVIDER_DIR = os.path.normpath(os.path.join(
 STUB_PATH = os.path.normpath(os.path.join(
     os.path.dirname(__file__), "..", "..", "trustrun-venvs", "n8n-venv",
     "n8n-stub.py"))
+# Fall back to the vendored copy (evals/real_agents/n8n_stub.py)
+# when the audit venv tree is absent, e.g. a fresh clone or CI.
+if not os.path.exists(STUB_PATH):
+    STUB_PATH = os.path.normpath(os.path.join(
+        os.path.dirname(__file__), "..", "evals", "real_agents",
+        "n8n_stub.py"))
 MONITOR_YAML = os.path.join(
     PROVIDER_DIR, "trustrun_provider", "tools", "monitor_configure.yaml")
 

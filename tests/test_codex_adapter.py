@@ -99,6 +99,12 @@ CODEX_BIN = os.path.join(
 STUB_PATH = os.path.normpath(os.path.join(
     os.path.dirname(__file__), "..", "..", "trustrun-venvs",
     "n8n-venv", "n8n-stub.py"))
+# Fall back to the vendored copy (evals/real_agents/n8n_stub.py)
+# when the audit venv tree is absent, e.g. a fresh clone or CI.
+if not os.path.exists(STUB_PATH):
+    STUB_PATH = os.path.normpath(os.path.join(
+        os.path.dirname(__file__), "..", "evals", "real_agents",
+        "n8n_stub.py"))
 SHIM_PATH = os.path.join(CODEX_DIR, "codex_stub.py")
 MCP_SERVER_PATH = os.path.join(CODEX_DIR, "codex_mcp_server.py")
 SECURITY_MD = os.path.join(SRC_DIR, "SECURITY.md")

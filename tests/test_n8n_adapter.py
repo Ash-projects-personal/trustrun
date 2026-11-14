@@ -71,6 +71,12 @@ VENV_DIR = os.path.join(
     os.path.dirname(__file__), "..", "..", "trustrun-venvs", "n8n-venv")
 VENV_DIR = os.path.normpath(VENV_DIR)
 STUB_PATH = os.path.join(VENV_DIR, "n8n-stub.py")
+# Fall back to the vendored copy (evals/real_agents/n8n_stub.py)
+# when the audit venv tree is absent, e.g. a fresh clone or CI.
+if not os.path.exists(STUB_PATH):
+    STUB_PATH = os.path.normpath(os.path.join(
+        os.path.dirname(__file__), "..", "evals", "real_agents",
+        "n8n_stub.py"))
 N8N_BIN = os.path.join(VENV_DIR, "node_modules", ".bin", "n8n")
 ENV_PATH = os.path.join(VENV_DIR, "n8n-env.sh")
 WORKFLOW_PATH = os.path.join(VENV_DIR, "n8n-workflow-v2.json")
@@ -137,6 +143,7 @@ def test_as_text():
     assert _as_text(42) == "42"
 
 
+@needs_venv
 def test_read_env_file():
     env = _read_env_file(ENV_PATH)
     assert env["N8N_PORT"] == "5678"
