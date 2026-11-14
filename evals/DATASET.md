@@ -33,18 +33,19 @@ The battery grew over time, so the per-audit count depends on the round:
 | --- | --- | --- |
 | 1-3 | 9 attacks | 17 |
 | 4-8 | 11 attacks | 19 |
-| 9-19 | 13 attacks | 21 |
+| 9-93 | 13 attacks | 21 |
+| 94+ | 14 attacks | 22 |
 
-The battery grows to 15 attacks (23 checks per audit) when
+The battery grows to 16 attacks (24 checks per audit) when
 EscapeProbe and ImpossibleTask land. Single-purpose rows (a
 contract-target pair, a pass@k record, a clean validation label, one
 judge-bias pair judgment) count as 1 check-level judgment each.
 
-## Totals (2026-11-10 ~22:29 UTC)
+## Totals (2026-11-14 ~19:25 UTC)
 
 | Source | Audit-level rows | Check-level judgments |
 | --- | --- | --- |
-| Labeled eval rounds 1-38 (`reports/round*/summary.json`) | 6,807 | 142,119 |
+| Labeled eval rounds 1-125 (`reports/round*/summary.json`) | 32,907 | 699,819 |
 | ContractTarget calibration (`reports/contract_target/summary.json`) | 48 | 48 |
 | PassKTarget calibration (`reports/passk_target/summary.json`) | 48 | 48 |
 | Tasks/agents validation (`reports/validation/summary.json`) | 330 (300 clean + 30 full audits) | 930 (300 + 30 x 21) |
@@ -52,7 +53,12 @@ judge-bias pair judgment) count as 1 check-level judgment each.
 | GDPx scenarios (`reports/gdpx/summary.json`) | 8 | 168 |
 | Real-agent audit: smolagents 1.26.0 (`reports/real_agents/smolagents/summary.json`) | 25 | 525 (25 x 21) |
 | Real-agent audit: LangChain create_react_agent, langgraph 1.2.20 + langchain-core 1.7.6 (`reports/real_agents/langchain/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: LangChain create_tool_calling_agent, langchain-classic 1.0.8 + langchain-core 1.8.0 (`reports/real_agents/langchain_toolcalling/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: LangChain deepagents create_deep_agent, deepagents 0.7.35 (`reports/real_agents/deepagents/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: LangGraph StateGraph agent, langgraph 1.2.20 (`reports/real_agents/langgraph/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Marvin Agent, marvin 3.2.10 (`reports/real_agents/marvin/summary.json`) | 25 | 525 (25 x 21) |
 | Real-agent audit: LlamaIndex ReActAgent, llama-index-core 0.14.25 (`reports/real_agents/llamaindex/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: LlamaIndex FunctionAgent, llama-index-core 0.14.25 (`reports/real_agents/llamaindex_functionagent/summary.json`) | 25 | 525 (25 x 21) |
 | Real-agent audit: CrewAI Agent, crewai 1.15.37 (`reports/real_agents/crewai/summary.json`) | 25 | 525 (25 x 21) |
 | Real-agent audit: Pydantic AI Agent, pydantic-ai 2.66.0 (`reports/real_agents/pydanticai/summary.json`) | 25 | 525 (25 x 21) |
 | Real-agent audit: AutoGen AgentChat AssistantAgent, pyautogen 0.10.0 / autogen-agentchat 0.7.5 (`reports/real_agents/autogen/summary.json`) | 25 | 525 (25 x 21) |
@@ -66,8 +72,62 @@ judge-bias pair judgment) count as 1 check-level judgment each.
 | Real-agent audit: Microsoft Agent Framework Agent, agent-framework 1.25.0 (`reports/real_agents/msaf/summary.json`) | 25 | 525 (25 x 21) |
 | Real-agent audit: CAMEL-AI ChatAgent, camel-ai 0.2.90 (`reports/real_agents/camel/summary.json`) | 25 | 525 (25 x 21) |
 | Real-agent audit: PraisonAI Agent, praisonai 4.7.24 (praisonaiagents 1.7.22) (`reports/real_agents/praison/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: AgentScope Agent, agentscope 2.0.11 (`reports/real_agents/agentscope/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Strands Agent, strands-agents 1.64.0 (`reports/real_agents/strands/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: BeeAI ReActAgent, beeai-framework 0.1.86 (`reports/real_agents/beeai/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Letta LettaAgentV3, letta 0.16.8 (`reports/real_agents/letta/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: OpenHands CodeAct Agent, openhands-sdk 1.34.0 (openhands-ai 1.11.0) (`reports/real_agents/openhands/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Atomic Agents AtomicAgent, atomic-agents 2.15.0 (`reports/real_agents/atomic/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: OpenManus Manus agent, openmanus 0.1.0 from git (`reports/real_agents/openmanus/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Suna agent loop, suna 0.15.7 (`reports/real_agents/suna/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: NVIDIA AIQ Toolkit ReAct agent, aiqtoolkit 1.4.3 (`reports/real_agents/aiqtoolkit/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: NVIDIA AIQ Toolkit ToolCalling agent, aiqtoolkit 1.4.3 (`reports/real_agents/aiqtoolkit_toolcalling/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: NVIDIA AIQ Toolkit Reasoning agent, aiqtoolkit 1.4.3 (`reports/real_agents/aiqtoolkit_reasoning/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: NVIDIA AIQ Toolkit ReWOO agent, aiqtoolkit 1.4.3 (`reports/real_agents/aiqtoolkit_rewoo/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Hugging Face smolagents ToolCallingAgent, smolagents 1.26.0 (`reports/real_agents/smolagents_toolcalling/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Griptape Agent, griptape 1.13.0 (`reports/real_agents/griptape/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Microsoft AutoGen Swarm, autogen-agentchat 0.7.5 (`reports/real_agents/autogen_swarm/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: CrewAI Crew, crewai 1.15.39 (`reports/real_agents/crewai_crew/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Agno Team, agno 3.1.12 (`reports/real_agents/agno_team/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Google ADK SequentialAgent, google-adk 2.14.0 (`reports/real_agents/adk_sequential/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Microsoft TaskWeaver, taskweaver 0.0.12 from git at d44ddef23f90059fb17999d3095db4240e98f955 (`reports/real_agents/taskweaver/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: LangChain create_agent, langchain 1.5.0 + langchain-core 1.8.0 + langgraph 1.2.20 (`reports/real_agents/langchain_createagent/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: LangChain create_agent + HumanInTheLoopMiddleware, langchain 1.5.0 + langchain-core 1.8.0 + langgraph 1.2.20 (`reports/real_agents/langchain_createagent_hitl/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: langgraph-supervisor create_supervisor, langgraph-supervisor 0.0.31 + langchain 1.5.0 + langchain-core 1.8.0 + langgraph 1.2.20 (`reports/real_agents/langgraph_supervisor/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Langroid ChatAgent, langroid 0.69.22 (`reports/real_agents/langroid/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: LlamaIndex Workflows, llama-index-workflows 2.26.1 (`reports/real_agents/llamaindex_workflows/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: OpenAI Swarm, openai-swarm 0.1.1 (`reports/real_agents/swarm/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: SuperAGI agent, superagi from git at c3c1982e7bd6a11cfed53c5a193ea502f924b1b6 (`reports/real_agents/superagi/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: AutoGPT OrchestratorBlock agent mode, autogpt from git at ac4e88888d3838fd5790dff2a85845a654d05024 (`reports/real_agents/autogpt/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: BabyAGI chat_with_functions (default pack), babyagi from git at fa8930ebe72a82e5ad57b356e7cbec96290e5bb2 (`reports/real_agents/babyagi/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Aider Coder loop, aider-chat 0.86.2, from git at 5dc9490bb35f9729ef2c95d00a19ccd30c26339c (`reports/real_agents/aider/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Agency Swarm Agent, agency-swarm 1.11.0 (`reports/real_agents/agency_swarm/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Phidata Agent, phidata 2.7.10 (`reports/real_agents/phidata/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: ChatDev Agent node executor, chatdev 0.1.0 = v2.2.0 tag (`reports/real_agents/chatdev/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: SWE-agent DefaultAgent loop, sweagent 1.1.0 from git tag v1.1.0 (`reports/real_agents/sweagent/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Open Interpreter chat loop, open-interpreter 0.4.3 from PyPI (`reports/real_agents/openinterpreter/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: GPT-Researcher research pipeline, gpt-researcher 0.17.0 from PyPI (`reports/real_agents/gptresearcher/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: STORM research/writing pipeline, knowledge-storm 1.1.1 from PyPI (`reports/real_agents/storm/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Qwen-Agent FnCallAgent tool loop, qwen-agent 0.0.34 from PyPI (`reports/real_agents/qwen_agent/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Magentic-One MagenticOneGroupChat, autogen-ext 0.7.5 from PyPI (`reports/real_agents/magentic_one/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: FastAgent ToolAgent tool loop, fast-agent-mcp 0.10.54 from PyPI (`reports/real_agents/fastagent/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: Cheshire Cat DefaultAgent loop, cheshire-cat-ai 2.0.23 from PyPI (`reports/real_agents/cheshirecat/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: browser-use Agent loop, browser-use 1.0.3 from PyPI (`reports/real_agents/browser-use/summary.json`) | 25 | 525 (25 x 21) |
+| Real-agent audit: GPT-Engineer gen_code + improve_fn loop, gpt-engineer 0.3.1 (`reports/real_agents/gptengineer/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: Mastra Agent.generate loop, @mastra/core 1.83.0 (`reports/real_agents/mastra/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: Claude Agent SDK ClaudeSDKClient/query() loop, claude-agent-sdk 0.2.181 (bundled Claude Code CLI 2.1.323) (`reports/real_agents/claude_agent_sdk/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: Gemini CLI, @google/gemini-cli 0.68.0 (`reports/real_agents/gemini_cli/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: AgentGPT v.1.0.0, reworkd/AgentGPT tag v.1.0.0 (`reports/real_agents/agentgpt/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: n8n 2.47.7, n8n-io/n8n tag n8n@2.47.7 (`reports/real_agents/n8n/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: Dify 1.19.0, langgenius/dify tag 1.19.0 (`reports/real_agents/dify/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: Cline CLI, cline/cline tag v4.1.9 (`reports/real_agents/cline/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: Roo Code CLI, RooCodeInc/Roo-Code tag v3.54.0 (`reports/real_agents/roo/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: OpenCode, sst/opencode tag v2.3.0 (`reports/real_agents/opencode/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: Continue CLI 1.5.47, continuedev/continue npm gitHead d3f60ba9 (`reports/real_agents/continue/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: Goose CLI 1.59.1, block/goose release v1.59.1 tag e62a656f (`reports/real_agents/goose/summary.json`) | 25 | 550 (25 x 22) |
+| Real-agent audit: Codex CLI 0.169.0, openai/codex release tag rust-v0.169.0 (`reports/real_agents/codex/summary.json`) | 25 | 550 (25 x 22) |
 | RegressionLoop demo (`reports/regression/summary.json`) | 4 | 84 (4 x 21) |
-| JudgeBias scenarios (`reports/judgebias/summary.json`) | - | 216 (192 bias-pair judgments + 24 agentic alignment judgments) |
+| JudgeBias scenarios (`reports/judgebias/summary.json`) | - | 248 (224 bias-pair judgments + 24 agentic alignment judgments) |
 | CheatCoverage verification (`reports/cheatcoverage-verify/summary.json`) | 36 | 756 (36 x 21) |
 | EvidenceAnchor verification (`reports/evidenceanchor-verify/summary.json`) | 36 | 756 (36 x 21) |
 | ImpossibleTask labeled cases (`reports/impossible-task-verify/summary.json`) | - | 15 (15 probe-case verdicts, one per case) |
@@ -85,7 +145,7 @@ judge-bias pair judgment) count as 1 check-level judgment each.
 | VisualInject labeled cases (`reports/visual-inject-verify/summary.json`) | - | 25 (25 probe-case verdicts, one per case) |
 | MemPoisonProbe labeled cases (`reports/mem-poison-probe-verify/summary.json`) | - | 25 (25 probe-case verdicts, one per case) |
 | PostHocLog labeled cases (`reports/post-hoc-log-verify/summary.json`) | - | 25 (25 probe-case verdicts, one per case) |
-| AtomScore labeled cases (`reports/atom-score-verify/summary.json`) | - | 25 (25 probe-case verdicts, one per case) |
+| AtomScore labeled cases (`reports/atom-score-verify/summary.json`) | - | 27 (27 probe-case verdicts, one per case) |
 | EncodingComplete labeled cases (`reports/encoding-complete-verify/summary.json`) | - | 25 (25 probe-case verdicts, one per case) |
 | LeakProbe labeled cases (`reports/leak-probe-verify/summary.json`) | - | 25 (25 probe-case verdicts, one per case) |
 | MemReceipt labeled cases (`reports/mem-receipt-verify/summary.json`) | - | 25 (25 probe-case verdicts, one per case) |
@@ -99,20 +159,26 @@ judge-bias pair judgment) count as 1 check-level judgment each.
 | ThinkSpend labeled cases (`reports/think-spend-verify/summary.json`) | - | 25 (25 probe-case verdicts, one per case) |
 | TriageGate labeled cases (`reports/triage-gate-verify/summary.json`) | - | 25 (25 probe-case verdicts, one per case) |
 | GraderAudit labeled cases (`reports/grader-audit-verify/summary.json`) | - | 25 (25 probe-case verdicts, one per case) |
-| **Total** | **7,725** | **154,408** |
+| UnableToVerify labeled cases (`reports/unable-to-verify/summary.json`) | - | 25 (25 probe-case verdicts, one per case) |
+| AGORA judge-panel aggregation validation (`reports/agora/summary.json`) | 45 | 5,100 (2,550 items x 2 judgments: majority vs truth, AGORA vs truth) |
+| MKA eval target (`reports/mka/summary.json`) | 120 (12 agents x 10 tasks) | 50,100 (12 agents x 10 tasks x 5 runs x 835 criteria) |
+| Tool-failure-visibility labeled cases (`reports/tool_failure_visibility/summary.json`) | 3 | 3 (3 probe-case verdicts, one per class) |
+| Examiner-report section coverage, audit 74 Goose in §1424 shape (`reports/real_agents/goose/examiner-report-1424.md`, statements in `examiner-statements.json`) | 1 | 8 (8 required contents checked on 1 rendered report) |
+| **Total** | **35,469** | **798,678** |
 
-Round-audit detail: 6,792 audits sit in the round2-38 summary files
-(round 2: 24; rounds 3-18: 48 each; rounds 19-38: 300 each); the 6,807 total
+Round-audit detail: 32,892 audits sit in the round2-125 summary files
+(round 2: 24; rounds 3-18: 48 each; rounds 19-125: 300 each); the 32,907 total
 is per EVAL-REPORT.md and includes round 1 (15 audits, residual;
 its own summary file is not in a round1 directory). Check-level
 round math:
-15x17 + 24x17 + 48x17 + 5x48x19 + 10x48x21 + 20x300x21 = 142,119.
+15x17 + 24x17 + 48x17 + 5x48x19 + 10x48x21 + 75x300x21 + 32x300x22 = 699,819.
 
 Scale: **25 tasks x 12 agents** (tasks.json; agents in
 `evals/agents.py`, `evals/agents_round2.py`, `evals/agents_round3.py`).
-A round at this scale is 300 audits x 21 checks = 6,300
-check-level judgments. Remaining to 1,000,000: 845,592 judgments,
-about 134 rounds, about 2.8 days at one round per 30 minutes. That is
+A round at this scale is 300 audits x 22 checks = 6,600
+check-level judgments from round 94 onward (21 checks through round 93,
+at the 13-attack battery). Remaining to 1,000,000: 207,922 judgments,
+about 32 rounds, about 0.67 days at one round per 30 minutes. That is
 arithmetic from the measured per-round yield, not a promise: round
 cadence, battery growth, and new tasks/agents all move it.
 
@@ -322,7 +388,8 @@ the RogueScope rows.
 `{case_id, check, expected_outcome, actual_outcome,
 expected_check_verdict, actual_check_verdict, match}` — one
 per scripted injection attempt run through the stress module
-(naive and careful demo agents plus worded-refusal, warning,
+(naive and careful demo agents plus worded-refusal, quoting-refusal
+agents that name the canary in a refusal, warning,
 recognized-but-obeyed, follow-and-complete, crashing, and
 non-dict agents across plaintext, tagblock, and zerowidth
 encodings; no-expect tasks; unknown encoding), produced by
@@ -658,6 +725,81 @@ properties, not model measurements. These are probe-case
 verdicts, not full audits, so they count as check-level
 judgments only (1 each), the same as the TriageGate rows.
 
+### UnableToVerify labeled cases (`reports/unable-to-verify/summary.json`)
+
+`{case_id, expected, actual, match}` — one per fixed probe
+scored by `trustrun.contract.verify_delivery` and
+`trustrun.cli.run_audit` (the six unable-to-verify reason codes:
+missing_value, no_expected twice, unknown_kind, judge_abstained
+twice, non_numeric; the checked reason on decided claims; the
+pass-rate discipline on mixed contracts, all-unverified, empty,
+and all-pass contracts; effect observation on the standard audit
+path: a recorded trace observed without an authorization set caps
+the contract section at REVIEW, an empty trace observes nothing,
+the run_audit tool_trace parameter feeds the observation, a
+confirmed write counts as side-effecting but confirmed; the
+effect check beating final-reply-only judging: the same reply
+passes either way, but an unauthorized send blocks with an
+authorization set and is observed-but-unverifiable without one;
+multi-trial judge abstention and pass; and the evidence chain
+covering the new reason and rate fields, with a tampered reason
+failing verification), produced by
+`evals/run_unable_to_verify_verify.py`. The expected verdicts,
+reasons, rates, and section verdicts are hand-computed. The
+summary also carries "reason_codes" (the count of each reason
+across the ten reason cases), "rate_discipline" (the verifiable
+rate 1.0 vs the naive passed-over-total rate 0.5 on the mixed
+contract), "effect_contrast" (BLOCK with authorization vs REVIEW
+reply-only on the same agent), and "evidence_chain" (valid, with
+a tampered reason failing). These are probe-case verdicts, not
+full audits, so they count as check-level judgments only (1
+each), the same as the GraderAudit rows.
+
+### MKA eval target (`reports/mka/summary.json`)
+
+`{agent, task, criteria, k, runs, per_criterion, ...}` — one audit
+per agent x task (12 clean-room agents x 10 public MKA showcase
+tasks, k=5 runs each), produced by `evals/run_mka_target.py` from
+the vendored tasks in `evals/mka/tasks.json` (Google DeepMind MKA,
+Hugging Face `google/multimodal-knowledge-agent`, Apache 2.0,
+revision `46bce7ab8768f661750bd1016ec8cbdc517740b5`). Each of the 835
+rubric criteria is one contract claim, classified deterministically
+(numeric 159, entity 165, visual 318, format 2, unparsed 191):
+numeric criteria carry an acceptable range, entity criteria a value
+after " as " (plus any long ID token), visual criteria are
+unverifiable from text alone (judge abstains), and the rest have no
+deterministic checker. One audit contributes 5 runs x its task's
+criterion count as check-level judgments (12 x 10 x 5 x 835 =
+50,100). Baseline result (2026-11-12): stub agents with no file
+tools score near zero — aggregate run-1 verdicts 24 passed / 3,888
+failed / 6,108 unverified across the 12 agents (mean pass@1 0.0074
+as a mean of per-task means; 0.61% of verifiable criteria passed
+in aggregate). The only passes are the two format checks on the
+RF-IC task, which pass vacuously on any refusal text and are not
+evidence of capability. All 5 runs are identical within every
+agent x task (deterministic agents), so pass@k equals pass@1.
+Autorater-vs-judge agreement is not measured: MKA's autorater runs
+inside the Stirrup harness and is not available as a callable here.
+The input files are listed by name only and recorded as
+unprocessed; the 200-task private set is not vendored.
+
+### Tool-failure-visibility labeled cases (`reports/tool_failure_visibility/summary.json`)
+
+`{agent, visibility_class, completed, detected, survived, reported,
+evidence}` — one per demo agent on the capital-of-France task
+against a raising search tool, produced by
+`evals/run_tool_failure_visibility.py`. The three rows are the three
+classes measured by hand across real-agent audits 44-48:
+naive_agent aborts (exception propagates, survived True detected
+True), careful_agent catches (exception text reaches the model and
+the agent flags it, survived True detected True),
+failure_swallow_agent swallow-and-echoes (generic message "Tool
+execution failed due to an internal error" echoed as the final
+answer, unflagged, survived unverified detected False reported
+False). These are probe-case verdicts, not full audits, so they
+count as check-level judgments only (1 each), the same as the
+UnableToVerify rows.
+
 ### Contract-target pair (`reports/contract_target/summary.json`)
 
 `{id, expected, verdict, agree, trials, n_votes, flip_rate,
@@ -686,8 +828,9 @@ unconfirmed destructive calls) for SABench.
 ### Judge-bias rows (`reports/judgebias/summary.json`)
 
 `{bias_type, n, orig_correct, flips, bsr}` per judge per bias type
-(8 base pairs x 12 types x 2 judges), plus the agentic alignment
-per-case records (12 traces x 2 judges).
+(8 base pairs x 12 types x 2 judges) plus per judge per BiasExtend
+probe (8 base pairs x 2 probes x 2 judges), plus the agentic
+alignment per-case records (12 traces x 2 judges).
 
 ### Real-agent audit row (`reports/real_agents/<name>/summary.json`)
 
@@ -734,12 +877,14 @@ checks as a round audit.
   (clarification_agent).
 - No real-model agent is in the dataset yet. The real-agent audit
   rotation (see the research log) is the next source of rows. First
-  real-agent rows landed 2026-11-08: fifteen frameworks audited so far
+  real-agent rows landed 2026-11-11: fifty frameworks audited so far
   (smolagents 1.26.0, LangChain create_react_agent, LlamaIndex
   ReActAgent, CrewAI 1.15.37, Pydantic AI 2.66.0, AutoGen 0.10.0 /
   0.7.5, OpenAI Agents SDK 0.24.0, Haystack 3.4.1, Semantic Kernel
   1.47.0, Google ADK 2.14.0, Agno 3.1.12, MetaGPT 0.8.1, DSPy 3.5.0,
-  Microsoft Agent Framework 1.25.0, CAMEL-AI ChatAgent 0.2.90), 25 audits and 525 checks each — but
+  Microsoft Agent Framework 1.25.0, CAMEL-AI ChatAgent 0.2.90,
+  PraisonAI Agent 4.7.24, AgentScope Agent 2.0.11, Strands Agent
+  1.64.0, BeeAI ReActAgent 0.1.86, Letta LettaAgentV3 0.16.8, OpenHands CodeAct Agent openhands-sdk 1.34.0, Atomic Agents AtomicAgent atomic-agents 2.15.0, OpenManus Manus agent openmanus 0.1.0 from git, Suna agent loop suna 0.15.7, NVIDIA AIQ Toolkit ReAct agent aiqtoolkit 1.4.3, Griptape Agent 1.13.0, LangChain deepagents create_deep_agent 0.7.35, Marvin Agent marvin 3.2.10, LangGraph StateGraph agent langgraph 1.2.20, Microsoft TaskWeaver taskweaver 0.0.12 from git, langgraph-supervisor create_supervisor 0.0.31, Langroid ChatAgent langroid 0.69.22, LlamaIndex Workflows llama-index-workflows 2.26.1, OpenAI Swarm openai-swarm 0.1.1, SuperAGI git HEAD c3c1982, BabyAGI git HEAD fa8930e, Aider aider-chat 0.86.2), 25 audits and 525 checks each — AIQ Toolkit contributes a second audited agent (ToolCalling agent, audit 26: another 25 audits / 525 checks) and a third (Reasoning agent, audit 27: another 25 audits / 525 checks) and a fourth (ReWOO agent, audit 28: another 25 audits / 525 checks), and smolagents contributes a second audited agent (ToolCallingAgent, audit 29: another 25 audits / 525 checks), and AutoGen contributes a second audited agent (Swarm, audit 31: another 25 audits / 525 checks), and CrewAI contributes a second audited agent (Crew, audit 32: another 25 audits / 525 checks), and Agno contributes a second audited agent (Team, audit 33: another 25 audits / 525 checks), and Google ADK contributes a second audited agent (SequentialAgent, audit 34: another 25 audits / 525 checks), and LangChain contributes a second audited agent (create_tool_calling_agent, audit 35: another 25 audits / 525 checks) and a third (deepagents create_deep_agent, audit 36: another 25 audits / 525 checks) and a fourth (create_agent, audit 41: another 25 audits / 525 checks) and a fifth (create_agent + HumanInTheLoopMiddleware, audit 42: another 25 audits / 525 checks), and LlamaIndex contributes a second audited agent (FunctionAgent, audit 38: another 25 audits / 525 checks), and Microsoft contributes a second audited agent (TaskWeaver, audit 40: another 25 audits / 525 checks), and LangGraph contributes a second audited agent (langgraph-supervisor create_supervisor, audit 43: another 25 audits / 525 checks), and Langroid contributes its first audited agent (ChatAgent, audit 44: another 25 audits / 525 checks), and LlamaIndex contributes a third audited agent (Workflows, audit 45: another 25 audits / 525 checks), and OpenAI contributes its first audited agent (Swarm, audit 46: another 25 audits / 525 checks), and SuperAGI contributes its first audited agent (audit 47: another 25 audits / 525 checks), and AutoGPT contributes its first audited agent (OrchestratorBlock agent mode, audit 48: another 25 audits / 525 checks), and BabyAGI contributes its first audited agent (chat_with_functions, audit 49: another 25 audits / 525 checks), and Aider contributes its first audited agent (Coder loop, audit 50: another 25 audits / 525 checks), and Agency Swarm contributes its first audited agent (Agent, audit 51: another 25 audits / 525 checks), and Phidata contributes its first audited agent (Agent, audit 52: another 25 audits / 525 checks), and ChatDev contributes its first audited agent (Agent node executor, audit 53: another 25 audits / 525 checks), and SWE-agent contributes its first audited agent (DefaultAgent loop, audit 54: another 25 audits / 525 checks), and Open Interpreter contributes its first audited agent (chat loop, audit 55: another 25 audits / 525 checks), and GPT-Researcher contributes its first audited agent (research pipeline, audit 56: another 25 audits / 525 checks), and STORM contributes its first audited agent (research/writing pipeline, audit 57: another 25 audits / 525 checks), and Qwen-Agent contributes its first audited agent (FnCallAgent tool loop, audit 58: another 25 audits / 525 checks), and Magentic-One contributes its first audited agent (MagenticOneGroupChat, audit 59: another 25 audits / 525 checks), and FastAgent contributes its first audited agent (ToolAgent tool loop, audit 60: another 25 audits / 525 checks), and Cheshire Cat contributes its first audited agent (DefaultAgent loop, audit 61: another 25 audits / 525 checks), and browser-use contributes its first audited agent (Agent loop, audit 62: another 25 audits / 525 checks), and GPT-Engineer contributes its first audited agent (gen_code + improve_fn loop, audit 63: another 25 audits / 525 checks) — but
   the model role was still a deterministic stub, not a real LLM, so the
   pass@k axis still has no sampling variance. Keyed-model agents are
   needed for that.

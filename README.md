@@ -58,6 +58,30 @@ task is a dict with "text", "expect", and optional "tools",
 record per line, with a "text" field. Records shaped like dolly-15k
 (instruction, input, output) are joined automatically.
 
+## Examiner report
+
+An audit can also be rendered in the shape New York's RAISE Act 2.0
+(S10731, section 1424) requires of a licensed frontier examiner:
+framework compliance, whether the framework needs more detail, and
+whether the developer's statements are inconsistent with the findings,
+plus a methodology and conflicts appendix, a lead-examiner signature
+block, 5-year evidence retention, and the distribution timing. This is
+a report format, not a legal opinion.
+
+```bash
+trustrun examiner-report report.json --kind annual \
+  --examiner "A. Examiner" --developer "Example Labs" \
+  --statements statements.json --out examiner-report.md
+```
+
+The report file is a run_audit dict, one audit summary row, or a
+summary with a rows list (use --index to pick a row). Statements are
+checked only when they carry a machine-checkable assertion (a section
+verdict, the overall verdict, or whether a named attack was survived);
+a statement without one is listed as unassessed, never guessed. The
+section coverage (required contents present, out of 8) is printed to
+stderr.
+
 ## How the verdict works
 
 READY means every section passed cleanly. REVIEW means something needs

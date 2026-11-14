@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trustrun"
-version = "0.1.1"
+version = "0.1.2"
 description = "The trust layer for AI agents"
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -13,6 +13,15 @@ license = { text = "MIT" }
 test = ["pytest>=7", "numpy>=1.24"]
 # Keyed eval extras: ToolCallingAgent rounds against live model APIs.
 keyed = ["smolagents>=1.0", "numpy>=1.24"]
+
+[tool.pytest.ini_options]
+# Vendored third-party source trees must never be collected: real-agent
+# audits clone framework source under <name>-src (evals/reports/ and
+# trustrun-venvs/), and a Python framework's own test files break
+# collection (audit 73: Continue's continue-sdk test files errored
+# collection with 16 errors). Defaults preserved, plus the vendored
+# trees. Keep this list in sync with tests/test_pytest_collection.py.
+norecursedirs = [".*", "build", "dist", "CVS", "_darcs", "{arch}", "*.egg", "venv", "*-src", "trustrun-venvs"]
 
 [project.scripts]
 trustrun = "trustrun.cli:main"
