@@ -30,9 +30,9 @@ Audit any agent with one command. The agent is a dotted path to a
 callable, the task is a JSON file.
 
 ```bash
-trustrun audit trustrun.consistency:steady_agent task.json \
+trustrun audit trustrun.consistency:steady_agent examples/task.json \
   --tools trustrun.stress:demo_tools \
-  --data train.jsonl --k 5 --seed 0
+  --data examples/train.jsonl --k 5 --seed 0
 ```
 
 You get one trust report with four sections. Each section returns
@@ -43,7 +43,7 @@ In code, the same audit is one function call:
 ```python
 from trustrun.cli import run_audit, format_report
 
-report = run_audit(agent, task, data_path="train.jsonl", seed=0, k=5)
+report = run_audit(agent, task, data_path="examples/train.jsonl", seed=0, k=5)
 print(format_report(report))
 ```
 
