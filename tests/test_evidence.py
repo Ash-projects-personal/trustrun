@@ -57,10 +57,10 @@ def test_anchor_covers_all_four_sections_and_overall():
     assert "consistency" in sections
     assert "data" in sections
     # 1 audit + 1 contract verdict + 1 claim + 1 stress verdict
-    # + 13 stress attacks + 1 consistency + 1 data verdict
-    # + 1 overall = 20 entries. A section with no items still
+    # + 14 stress attacks + 1 consistency + 1 data verdict
+    # + 1 overall = 21 entries. A section with no items still
     # contributes its verdict record.
-    assert len(anchor["entries"]) == 20
+    assert len(anchor["entries"]) == 21
     assert anchor["version"] == 1
     assert anchor["algorithm"] == "sha256"
 

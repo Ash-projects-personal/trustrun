@@ -8,6 +8,8 @@ import pytest
 from trustrun.contract import verify_delivery
 from trustrun.contract.dogfood import (
     CHEAT_CASES,
+    _expected_settlement,
+    _settlement_judge,
     contract_for_case,
     data_available,
     load_records,
@@ -151,10 +153,39 @@ def test_dogfood_two_real_cases():
     assert cheat_report["passed"] == 5
 
 
+def test_settlement_judge_graded_partial():
+    # Regression (2026-11-11): Pact's graded settlement re-graded case 2
+    # to 1/5 checks with a partial settlement. The old two-branch judge
+    # demanded a full refund for any non-full pass and failed the case.
+    assert _expected_settlement({"checks": "5/5"}) == (
+        "released", "released", "returned")
+    assert _expected_settlement({"checks": "0/5"}) == (
+        "refunded", "refunded", "slashed")
+    assert _expected_settlement({"checks": "1/5"}) == (
+        "graded", "partially_released", "partially_slashed")
+    partial = {"outcome": "graded",
+               "payment_status": "partially_released",
+               "bond_status": "partially_slashed"}
+    assert _settlement_judge("1/5", None, partial)[0] is True
+    assert _settlement_judge("1/5", None, {
+        "outcome": "refunded", "payment_status": "refunded",
+        "bond_status": "slashed"})[0] is False
+    assert _settlement_judge("0/5", None, {
+        "outcome": "refunded", "payment_status": "refunded",
+        "bond_status": "slashed"})[0] is True
+    case = {"case": "synthetic partial cheat", "checks": "1/5",
+            "negotiated_price": 100.0, "bond": 20.0,
+            "outcome": "graded",
+            "payment_status": "partially_released",
+            "bond_status": "partially_slashed"}
+    assert verify_delivery(
+        contract_for_case(case, "cheat"), case)["verdict"] == "pass"
+
+
 @needs_pact_data
 def test_dogfood_full_counts():
     reports, totals = run_dogfood()
-    # Counts track the local Pact experiment data file: 27 cases, 13
+    # Counts track the local Pact experiment data file: 28 cases, 13
     # adversarial attacks (A1-A5 incl. A2b/A2c, B1-B6), 1 limit case.
     # Updated 2026-11-02 when two cases were added; updated 2026-11-03
     # when the "Email newsletter issue, cheat writer" case (0/5 checks,
@@ -171,14 +202,28 @@ def test_dogfood_full_counts():
     # added; updated 2026-11-09 when the "Landing page copy, cheat
     # copywriter" case (0/5 checks, refunded, bond slashed) was added;
     # updated 2026-11-10 when the "Logo and brand kit, cheat
-    # designer" case (0/5 checks, refunded, bond slashed) was added.
+    # designer" case (0/5 checks, refunded, bond slashed) was added;
+    # updated 2026-11-11 when the "Python script task, cheat coder"
+    # case (0/5 checks, refunded, bond slashed) was added; updated
+    # 2026-11-11 when graded settlement re-graded case 2 ("Social pack,
+    # recycled copy cheat") to 1/5 checks with a partial settlement —
+    # the contract now derives the expected settlement from the check
+    # fraction, so the counts below are unchanged by that re-grade;
+    # updated again 2026-11-11 when the Pact build's 20:36 UTC rewrite
+    # renamed the partial outcome label from "partially_settled" to
+    # "graded" (Pact's own vocabulary, pact/store.py) and the contract
+    # followed it — counts still unchanged; updated 2026-11-12 when
+    # the Pact data file gained its 29th case, "Market research brief,
+    # cheat researcher" (index 28, 0/5 checks, refunded, bond
+    # slashed), so CHEAT_CASES gained 28 and the counts below moved
+    # by one report and five passing claims.
     # All cheat cases are labeled in CHEAT_CASES, so they are judged
     # against the cheat contract and PASS (correctly caught cheats).
-    assert len(reports) == 41
-    assert totals["pass"] == 40
+    assert len(reports) == 43
+    assert totals["pass"] == 42
     assert totals["fail"] == 1
     assert totals["unverified"] == 0
-    assert totals["claims_pass"] == 161
+    assert totals["claims_pass"] == 171
     assert totals["claims_fail"] == 1
     assert totals["claims_unverified"] == 0
     failed = [name for name, r in reports if r["verdict"] == "fail"]
@@ -196,15 +241,19 @@ def test_cheat_cases_cover_all_cheat_records():
     for i in CHEAT_CASES:
         assert i < len(cases), "CHEAT_CASES index %d beyond data file" % i
     # In the Pact experiment data every cheat deal is refunded with the
-    # bond slashed, and every honest deal is released with the bond
-    # returned: the settlement outcome derives the deal type from the
-    # recorded data itself, not from case-name heuristics.
-    refunded_indices = {i for i, c in enumerate(cases)
-                        if c.get("outcome") == "refunded"
-                        and c.get("bond_status") == "slashed"}
-    assert refunded_indices == CHEAT_CASES, (
-        "CHEAT_CASES %s does not match refunded/slashed cases %s in the "
-        "Pact data file" % (sorted(CHEAT_CASES), sorted(refunded_indices)))
+    # bond slashed, or — under graded settlement (2026-11-11) — settled
+    # as "graded" with the bond partially slashed when it passes some
+    # checks; and every honest deal is released with the bond returned:
+    # the settlement outcome derives from the recorded data itself, not
+    # from case-name heuristics.
+    settled_cheat = {i for i, c in enumerate(cases)
+                     if (c.get("outcome") == "refunded"
+                         and c.get("bond_status") == "slashed")
+                     or (c.get("outcome") == "graded"
+                         and c.get("bond_status") == "partially_slashed")}
+    assert settled_cheat == CHEAT_CASES, (
+        "CHEAT_CASES %s does not match settled cheat cases %s in the "
+        "Pact data file" % (sorted(CHEAT_CASES), sorted(settled_cheat)))
 
 
 # agent error distinction: an errored claim fails, but is flagged as an
@@ -241,3 +290,97 @@ def test_missing_value_is_not_flagged():
     report = verify_delivery(_answer_contract(), {"other": "x"})
     assert report["verdict"] == "unverified"
     assert report["claims"][0]["agent_error"] is False
+
+
+# TRUSTRUN-UnableToVerify: the third verdict state is named, reasoned,
+# and never counted as a pass.
+
+
+def test_empty_expected_contains_is_unverified_not_vacuous_pass():
+    # Regression: "" is inside every string, so a contains claim with
+    # an empty expected used to pass vacuously. An empty expectation
+    # checks nothing, so it is unverified, never a pass.
+    contract = {"task": "t", "claims": [
+        {"id": "a", "statement": "s", "kind": "contains", "expected": ""}]}
+    report = verify_delivery(contract, {"a": "anything at all"})
+    assert report["verdict"] == "unverified"
+    assert report["claims"][0]["reason"] == "no_expected"
+
+
+def test_none_expected_exact_is_unverified():
+    contract = {"task": "t", "claims": [
+        {"id": "a", "statement": "s", "kind": "exact", "expected": None}]}
+    report = verify_delivery(contract, {"a": "x"})
+    assert report["verdict"] == "unverified"
+    assert report["claims"][0]["reason"] == "no_expected"
+
+
+def test_unverified_reason_codes():
+    missing = {"task": "t", "claims": [
+        {"id": "a", "statement": "s", "kind": "exact", "expected": "x"}]}
+    assert verify_delivery(missing, {})["claims"][0]["reason"] == "missing_value"
+
+    unknown = {"task": "t", "claims": [
+        {"id": "a", "statement": "s", "kind": "magic", "expected": "x"}]}
+    assert verify_delivery(unknown, {"a": "x"})["claims"][0]["reason"] == "unknown_kind"
+
+    def abstain(value, claim, output):
+        return None, "cannot tell"
+
+    judge_contract = {"task": "t", "claims": [
+        {"id": "a", "statement": "s", "kind": "judge", "judge": abstain}]}
+    report = verify_delivery(judge_contract, {"a": "maybe"})
+    assert report["claims"][0]["reason"] == "judge_abstained"
+
+    numeric = {"task": "t", "claims": [
+        {"id": "a", "statement": "s", "kind": "numeric", "expected": 1.0}]}
+    report = verify_delivery(numeric, {"a": "not a number"})
+    assert report["claims"][0]["reason"] == "non_numeric"
+
+
+def test_checked_reason_on_decided_claims():
+    contract = {"task": "t", "claims": [
+        {"id": "a", "statement": "s", "kind": "exact", "expected": "x"},
+        {"id": "b", "statement": "s", "kind": "exact", "expected": "y"}]}
+    report = verify_delivery(contract, {"a": "x", "b": "z"})
+    assert report["claims"][0]["reason"] == "checked"
+    assert report["claims"][1]["reason"] == "checked"
+
+
+def test_pass_rate_verifiable_excludes_unverified():
+    # One pass, one unverified: the verifiable rate is 1.0, the naive
+    # passed-over-total rate would be 0.5. The unverifiable share is
+    # reported beside it, so the padded rate cannot stand alone.
+    contract = {"task": "t", "claims": [
+        {"id": "a", "statement": "s", "kind": "exact", "expected": "x"},
+        {"id": "b", "statement": "s", "kind": "exact", "expected": "y"}]}
+    report = verify_delivery(contract, {"a": "x"})
+    assert report["pass_rate_verifiable"] == 1.0
+    assert report["unverifiable_share"] == 0.5
+    assert report["passed"] / len(report["claims"]) == 0.5
+
+
+def test_pass_rate_none_when_nothing_verifiable():
+    contract = {"task": "t", "claims": [
+        {"id": "a", "statement": "s", "kind": "exact", "expected": "x"}]}
+    report = verify_delivery(contract, {})
+    assert report["pass_rate_verifiable"] is None
+    assert report["unverifiable_share"] == 1.0
+
+
+def test_rates_on_empty_contract():
+    report = verify_delivery({"task": "t", "claims": []}, {})
+    assert report["verdict"] == "pass"
+    assert report["pass_rate_verifiable"] is None
+    assert report["unverifiable_share"] == 0.0
+
+
+def test_multi_trial_judge_abstain_reason():
+    def abstain(value, claim, output):
+        return None, "cannot tell"
+
+    contract = {"task": "t", "claims": [
+        {"id": "a", "statement": "s", "kind": "judge", "judge": abstain}]}
+    report = verify_delivery(contract, {"a": "maybe"}, judge_trials=11)
+    assert report["verdict"] == "unverified"
+    assert report["claims"][0]["reason"] == "judge_abstained"

@@ -43,6 +43,26 @@ across the contract's judge-kind claims. See trustrun/contract/judge.py
 for the method and its sources. Rule-kind claims (exact, contains,
 numeric) are binary-verifiable atoms and are judged once, deterministically.
 
+Unable to Verify (TRUSTRUN-UnableToVerify): the third verdict state.
+A claim the judge cannot check from the evidence is "unverified",
+never forced into pass or fail, and every claim verdict carries a
+machine-readable "reason" saying why (missing_value, no_expected,
+unknown_kind, judge_abstained, non_numeric; pass/fail claims carry
+"checked"). The report also carries "pass_rate_verifiable", the pass
+rate over verifiable claims only, and "unverifiable_share", the share
+of claims that could not be verified at all, so a pass rate padded
+with uncheckable claims is impossible: unverifiable claims are never
+counted as passes and the rate is always shown with the share. Method
+source: TestMu AI Agent Assurance, GA October 26, 2026 (BusinessWire
+via Morningstar): every criterion ends Pass/Fail/Unable to Verify,
+each verdict quoting its evidence, Unable to Verify never counted as
+a pass. CXBench (October 2026, company-cited) is the effect-side
+motivation: 80.1% of runs reaching the right outcome still failed
+process checks, only 13.8% passed both, so the delivered output alone
+is not the run: see the effect observation in trustrun/cli.py, which
+records what a run actually changed from its tool-call trace even
+when no authorization set exists to judge it against.
+
 Side-effect oracle (TRUSTRUN-SABenchAdopt, TRUSTRUN-CarefulAdopt):
 passing effects and authorization to verify_delivery scores the
 recorded tool-call trace judge-free against the task's authorization
@@ -56,6 +76,7 @@ is unverified, never authorized.
 
 import random
 
+from trustrun.contract.agora import aggregate_panel, ratings_from_trial_records
 from trustrun.contract.judge import (
     MIN_TRIALS,
     call_judge,
@@ -71,6 +92,15 @@ _MISSING = object()
 # answer (for example "AGENT-ERROR: ProviderError: content filtered").
 _AGENT_ERROR_MARKER = "AGENT-ERROR"
 
+# Unable-to-verify reason codes (TRUSTRUN-UnableToVerify). Every claim
+# verdict carries one, so an "unverified" is never a bare unknown.
+REASON_CHECKED = "checked"
+REASON_MISSING_VALUE = "missing_value"
+REASON_NO_EXPECTED = "no_expected"
+REASON_UNKNOWN_KIND = "unknown_kind"
+REASON_JUDGE_ABSTAINED = "judge_abstained"
+REASON_NON_NUMERIC = "non_numeric"
+
 
 def _is_agent_error(value):
     """True when the recorded value is an agent failure, not an answer."""
@@ -83,35 +113,38 @@ def _is_number(value):
 
 def _judge_exact(claim, value):
     expected = claim.get("expected", _MISSING)
-    if expected is _MISSING:
-        return None, "claim has no expected value, cannot judge"
+    if expected is _MISSING or expected is None:
+        return None, "claim has no expected value, cannot judge", REASON_NO_EXPECTED
     ok = value == expected
-    return ok, "expected %r, recorded %r" % (expected, value)
+    return ok, "expected %r, recorded %r" % (expected, value), REASON_CHECKED
 
 
 def _judge_contains(claim, value):
     expected = claim.get("expected", _MISSING)
-    if expected is _MISSING:
-        return None, "claim has no expected value, cannot judge"
+    if expected is _MISSING or expected is None or expected == "":
+        # An empty expected matches everything, so it checks nothing:
+        # a claim with no checkable expectation is unverified, never
+        # a vacuous pass.
+        return None, "claim has no expected value, cannot judge", REASON_NO_EXPECTED
     ok = str(expected) in str(value)
-    return ok, "expected %r inside recorded %r" % (expected, value)
+    return ok, "expected %r inside recorded %r" % (expected, value), REASON_CHECKED
 
 
 def _judge_numeric(claim, value):
     expected = claim.get("expected", _MISSING)
-    if expected is _MISSING:
-        return None, "claim has no expected value, cannot judge"
+    if expected is _MISSING or expected is None:
+        return None, "claim has no expected value, cannot judge", REASON_NO_EXPECTED
     if not _is_number(value) or not _is_number(expected):
-        return None, "numeric check needs numbers, got %r vs %r" % (value, expected)
+        return None, "numeric check needs numbers, got %r vs %r" % (value, expected), REASON_NON_NUMERIC
     tolerance = claim.get("tolerance", 0)
     ok = abs(value - expected) <= tolerance
-    return ok, "expected %r within %r, recorded %r" % (expected, tolerance, value)
+    return ok, "expected %r within %r, recorded %r" % (expected, tolerance, value), REASON_CHECKED
 
 
 def _judge_judge(claim, value, output):
     func = claim.get("judge")
     if not callable(func):
-        return None, "judge claim needs a callable judge, cannot judge"
+        return None, "judge claim needs a callable judge, cannot judge", REASON_JUDGE_ABSTAINED
     # A four-argument judge takes a context (trial, position, tools);
     # a single-trial call runs as trial 0 of 1 at position 0.
     context = {
@@ -124,13 +157,13 @@ def _judge_judge(claim, value, output):
     }
     result = call_judge(func, value, claim, output, context)
     if not isinstance(result, tuple) or len(result) != 2:
-        return None, "judge returned a bad shape, cannot judge"
+        return None, "judge returned a bad shape, cannot judge", REASON_JUDGE_ABSTAINED
     decision, evidence = result
     if decision is True:
-        return True, str(evidence)
+        return True, str(evidence), REASON_CHECKED
     if decision is False:
-        return False, str(evidence)
-    return None, str(evidence)
+        return False, str(evidence), REASON_CHECKED
+    return None, str(evidence), REASON_JUDGE_ABSTAINED
 
 
 _CHECKERS = {
@@ -144,7 +177,7 @@ _CHECKERS = {
 def verify_delivery(contract, output, *, judge_trials=1, judges=None,
                     tools=None, seed=0, effects=None, authorization=None,
                     goal_satisfied=None, trap_family=None,
-                    reference_effects=None):
+                    reference_effects=None, aggregate="majority"):
     """Judge delivered output against a task contract.
 
     contract: dict with "task" and "claims" (see module docstring).
@@ -174,21 +207,41 @@ def verify_delivery(contract, output, *, judge_trials=1, judges=None,
     surplus-step count is measured against).
 
     Returns a dict with the per claim verdicts plus evidence, the counts,
-    and the overall verdict. In multi-trial mode each judge-kind claim
-    also carries its trial record, and the report gains a
+    and the overall verdict. Every claim entry carries a "reason"
+    code (TRUSTRUN-UnableToVerify): "checked" when the check ran and
+    decided, else why it could not be verified. The report also
+    carries "pass_rate_verifiable" (passes over verifiable claims
+    only, None when there are none) and "unverifiable_share" (the
+    share of claims that could not be verified at all); unverifiable
+    claims are never counted as passes. In multi-trial mode each
+    judge-kind claim also carries its trial record, and the report gains a
     "judge_reliability" summary (trials, binary coverage, mean flip
     rate, kappa, per-family agreement). Rule-kind claims are
     deterministic: flip rate 0.0, one trial.
+
+    aggregate: "majority" (default) keeps the shipped JudgeRedesign
+    per-claim verdicts. "agora" adds an "agora" section to
+    judge_reliability: the contract's judge-kind claims aggregated by
+    IRT reliability weighting (TRUSTRUN-AGORA-Aggregate, see
+    trustrun/contract/agora.py), with the dispersion go/no-go signal.
+    The per-claim verdicts stay majority in both modes; AGORA verdicts
+    are reported alongside for comparison, never silently substituted.
+    AGORA needs at least two judge-kind claims to fit; with fewer it
+    reports the majority verdicts with a note naming the reason.
     """
     if not isinstance(contract, dict) or not isinstance(output, dict):
         raise TypeError("contract and output must both be dicts")
     if judge_trials < 1:
         raise ValueError("judge_trials must be at least 1")
+    if aggregate not in ("majority", "agora"):
+        raise ValueError("aggregate must be 'majority' or 'agora'")
     multi_trial = judge_trials > 1
     claims = contract.get("claims", []) or []
     rng = random.Random(seed) if multi_trial else None
     judged = []
     judge_vote_lists = []
+    judge_trial_records = []
+    judge_claim_ids = []
     for claim in claims:
         claim_id = claim.get("id", "?")
         field = claim.get("field", claim_id)
@@ -199,6 +252,7 @@ def verify_delivery(contract, output, *, judge_trials=1, judges=None,
                 "statement": claim.get("statement", ""),
                 "verdict": "unverified",
                 "evidence": "no value recorded for %r" % field,
+                "reason": REASON_MISSING_VALUE,
                 "agent_error": False,
             })
             continue
@@ -209,11 +263,16 @@ def verify_delivery(contract, output, *, judge_trials=1, judges=None,
                 judges=judges, tools=tools, rng=rng)
             if record["votes"]:
                 judge_vote_lists.append(record["votes"])
+                judge_trial_records.append(record)
+                judge_claim_ids.append(claim_id)
             judged.append({
                 "id": claim_id,
                 "statement": claim.get("statement", ""),
                 "verdict": record["verdict"],
                 "evidence": "; ".join(record["evidence"]),
+                "reason": (REASON_JUDGE_ABSTAINED
+                           if record["verdict"] == "unverified"
+                           else REASON_CHECKED),
                 "agent_error": _is_agent_error(value),
                 "trials": record["trials"],
                 "n_votes": len(record["votes"]),
@@ -231,10 +290,11 @@ def verify_delivery(contract, output, *, judge_trials=1, judges=None,
                 "statement": claim.get("statement", ""),
                 "verdict": "unverified",
                 "evidence": "unknown check kind %r" % kind,
+                "reason": REASON_UNKNOWN_KIND,
                 "agent_error": _is_agent_error(value),
             })
             continue
-        decision, evidence = checker(claim, value, output)
+        decision, evidence, reason = checker(claim, value, output)
         if decision is True:
             verdict = "pass"
         elif decision is False:
@@ -246,6 +306,7 @@ def verify_delivery(contract, output, *, judge_trials=1, judges=None,
             "statement": claim.get("statement", ""),
             "verdict": verdict,
             "evidence": evidence,
+            "reason": reason,
             "agent_error": _is_agent_error(value),
         }
         if multi_trial:
@@ -263,12 +324,21 @@ def verify_delivery(contract, output, *, judge_trials=1, judges=None,
         overall = "unverified"
     else:
         overall = "pass"
+    verifiable = passed + failed
     report = {
         "task": contract.get("task", ""),
         "claims": judged,
         "passed": passed,
         "failed": failed,
         "unverified": unverified,
+        # Pass rate over verifiable claims only (TRUSTRUN-UnableToVerify):
+        # unverifiable claims are never counted as passes, and the rate
+        # is always reported beside the unverifiable share, so a padded
+        # rate is impossible. None when nothing is verifiable.
+        "pass_rate_verifiable": (
+            passed / verifiable if verifiable else None),
+        "unverifiable_share": (
+            unverified / len(judged) if judged else 0.0),
         "verdict": overall,
     }
     if effects is not None or authorization is not None:
@@ -317,4 +387,25 @@ def verify_delivery(contract, output, *, judge_trials=1, judges=None,
                 sum(family) / len(family) if family else None),
             "positions_randomized": True,
         }
+        if aggregate == "agora" and judge_trial_records:
+            ratings, names = ratings_from_trial_records(
+                judge_trial_records)
+            section = aggregate_panel(ratings, judge_names=names)
+            report["judge_reliability"]["agora"] = {
+                "method": section["method"],
+                "claim_ids": list(judge_claim_ids),
+                "verdicts": dict(zip(judge_claim_ids,
+                                     section["verdicts"])),
+                "majority_verdicts": dict(zip(
+                    judge_claim_ids, section["majority_verdicts"])),
+                "agreement_with_majority":
+                    section["agreement_with_majority"],
+                "trust_weights": section["trust_weights"],
+                "discriminations": section["discriminations"],
+                "dispersion": section["dispersion"],
+                "dispersion_verdict": section["dispersion_verdict"],
+                "converged": section["converged"],
+                "iterations": section["iterations"],
+                "notes": section["notes"],
+            }
     return report

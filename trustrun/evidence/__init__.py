@@ -87,6 +87,8 @@ def anchor_records(report):
         "passed": contract.get("passed"),
         "failed": contract.get("failed"),
         "unverified": contract.get("unverified"),
+        "pass_rate_verifiable": contract.get("pass_rate_verifiable"),
+        "unverifiable_share": contract.get("unverifiable_share"),
     })
     for claim in contract.get("claims") or []:
         records.append({
@@ -94,6 +96,7 @@ def anchor_records(report):
             "claim": claim.get("id"),
             "statement": claim.get("statement"),
             "verdict": claim.get("verdict"),
+            "reason": claim.get("reason"),
             "evidence": claim.get("evidence"),
         })
     side = contract.get("side_effects")
@@ -103,6 +106,14 @@ def anchor_records(report):
             "check": "side_effects",
             "verdict": side.get("verdict"),
             "evidence": side.get("evidence"),
+        })
+    observed = contract.get("effects_observed")
+    if observed is not None:
+        records.append({
+            "section": "contract",
+            "check": "effects_observed",
+            "verdict": observed.get("verdict"),
+            "evidence": observed.get("evidence"),
         })
     stress = sections.get("stress") or {}
     records.append({

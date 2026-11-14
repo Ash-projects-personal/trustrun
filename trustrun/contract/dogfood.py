@@ -5,7 +5,7 @@ experiments/real_cases_results.json and the attack results from
 experiments/adversarial_results.json in the Pact project, and judges each
 record against a contract built from the deal's own terms.
 
-Nothing here is invented. The 27 settlement cases and the 13 attack cases
+Nothing here is invented. The 28 settlement cases and the 13 attack cases
 are recorded runs. The deal type labels (honest or cheat) come from the
 case definitions in experiments/real_cases.py. The limit case is Pact's
 own documented verifier limit: a translation cheat that counting checks
@@ -41,10 +41,20 @@ PACT_EXPERIMENTS = Path.home() / "workspace" / "projects" / "pact-agentic-commer
 # slashed) was added 2026-11-08; the "Landing page copy, cheat
 # copywriter" case (0/5 checks, refunded, bond slashed) was added
 # 2026-11-09; the "Logo and brand kit, cheat designer" case (0/5
-# checks, refunded, bond slashed) was added 2026-11-10). A cheat judged against the
+# checks, refunded, bond slashed) was added 2026-11-10; the "Python
+# script task, cheat coder" case (0/5 checks, refunded, bond slashed)
+# was added 2026-11-11). A cheat judged against the
 # honest contract yields a wrong "fail" verdict, so this set must stay
-# complete.
-CHEAT_CASES = {1, 2, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26}
+# complete. Graded settlement (2026-11-11, Ash-approved): case 2
+# ("Social pack, recycled copy cheat") passes 1/5 checks and settles
+# partially (graded / partially_released / partially_slashed); the
+# contract derives the expected settlement from the check fraction, so
+# a partial pass is judged a pass. The partial outcome label is
+# "graded", Pact's own vocabulary (pact/store.py: "in exactly one of
+# released, graded, refunded, or failed"); the 20:09 UTC data rewrite
+# used the interim label "partially_settled", the 20:36 UTC rewrite
+# renamed it to "graded", and the contract follows the recorded data.
+CHEAT_CASES = {1, 2, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28}
 
 
 def _parse_checks(checks):
@@ -52,18 +62,29 @@ def _parse_checks(checks):
     return int(passed), int(total)
 
 
+def _expected_settlement(case):
+    """(outcome, payment_status, bond_status) the checks call for.
+
+    Graded settlement (2026-11-11, Ash-approved for Pact): pay per
+    passed check, bond slashed in proportion. A deal that passes all
+    checks settles in full; one that passes none is fully refunded
+    with the bond slashed; a partial pass settles partially. The
+    expectation derives from the check fraction, not the deal label.
+    """
+    passed, total = _parse_checks(str(case.get("checks", "0/0")))
+    if passed == total:
+        return "released", "released", "returned"
+    if passed == 0:
+        return "refunded", "refunded", "slashed"
+    return "graded", "partially_released", "partially_slashed"
+
+
 def _settlement_judge(value, claim, output):
     passed, total = _parse_checks(str(value))
-    if passed == total:
-        ok = (output.get("outcome") == "released"
-              and output.get("payment_status") == "released"
-              and output.get("bond_status") == "returned")
-        return ok, "checks %s, settlement %s/%s/%s" % (
-            value, output.get("outcome"),
-            output.get("payment_status"), output.get("bond_status"))
-    ok = (output.get("outcome") == "refunded"
-          and output.get("payment_status") == "refunded"
-          and output.get("bond_status") == "slashed")
+    expected = _expected_settlement({"checks": value})
+    ok = (output.get("outcome") == expected[0]
+          and output.get("payment_status") == expected[1]
+          and output.get("bond_status") == expected[2])
     return ok, "checks %s, settlement %s/%s/%s" % (
         value, output.get("outcome"),
         output.get("payment_status"), output.get("bond_status"))
@@ -79,16 +100,15 @@ def _bond_ratio_judge(value, claim, output):
 
 
 def contract_for_case(case, deal_type):
-    settled = "released" if deal_type == "honest" else "refunded"
-    bond = "returned" if deal_type == "honest" else "slashed"
+    settled, payment, bond = _expected_settlement(case)
     return {
         "task": "Pact deal settlement: %s" % case["case"],
         "claims": [
-            {"id": "outcome", "statement": "Deal outcome matches the deal type",
+            {"id": "outcome", "statement": "Deal outcome matches the settlement its checks call for",
              "kind": "exact", "expected": settled},
-            {"id": "payment_status", "statement": "Payment status matches the deal type",
-             "kind": "exact", "expected": settled},
-            {"id": "bond_status", "statement": "Bond status matches the deal type",
+            {"id": "payment_status", "statement": "Payment status matches the settlement its checks call for",
+             "kind": "exact", "expected": payment},
+            {"id": "bond_status", "statement": "Bond status matches the settlement its checks call for",
              "kind": "exact", "expected": bond},
             {"id": "bond", "statement": "Bond sits between 15 and 30 percent of price",
              "kind": "judge", "judge": _bond_ratio_judge},
