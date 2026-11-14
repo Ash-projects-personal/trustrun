@@ -159,9 +159,10 @@ _VENV_DIR = os.path.join(
     "trustrun-venvs", "gemini-cli-venv")
 _VENV_DIR = os.path.normpath(_VENV_DIR)
 _DRIVER_PATH = os.path.join(_VENV_DIR, "gemini-cli-driver.py")
-_DRIVER_PYTHON = os.path.join(
-    os.path.dirname(__file__), "..", "..", ".venv", "bin", "python")
-_DRIVER_PYTHON = os.path.normpath(_DRIVER_PYTHON)
+# The driver is stdlib-only, so it runs under the interpreter
+# that is running the adapter. A hard <checkout>/.venv path
+# breaks in any checkout that does not create exactly that venv.
+_DRIVER_PYTHON = sys.executable
 
 # Per-call tool registry for the bridge: call_id -> tools dict.
 _TOOL_REGISTRY = {}

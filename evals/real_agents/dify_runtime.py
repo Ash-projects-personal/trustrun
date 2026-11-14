@@ -41,7 +41,14 @@ for _p in (DIFY_API, PROVIDER_DIR):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-_spec = importlib.util.spec_from_file_location("dify_n8n_stub", N8N_STUB)
+# The stub's canonical copy lives in the audit venv tree, which
+# is not part of the repo; a byte-identical copy is vendored in
+# the repo (evals/real_agents/n8n_stub.py) so a fresh clone can
+# import this module and run the pure tests. The venv copy wins
+# when present. tests/test_n8n_stub_vendored.py pins the copies.
+_REPO_STUB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "n8n_stub.py")
+_stub_file = N8N_STUB if os.path.exists(N8N_STUB) else _REPO_STUB
+_spec = importlib.util.spec_from_file_location("dify_n8n_stub", _stub_file)
 _stub_mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_stub_mod)
 DeterministicStub = _stub_mod.DeterministicStub

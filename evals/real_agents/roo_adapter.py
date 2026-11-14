@@ -307,7 +307,14 @@ _SERVERS_LOCK = threading.Lock()
 _CLI_INSTANCES = {}
 _CLI_LOCK = threading.Lock()
 
-_spec = importlib.util.spec_from_file_location("roo_n8n_stub", _STUB_PATH)
+# The stub's canonical copy lives in the audit venv tree, which
+# is not part of the repo; a byte-identical copy is vendored in
+# the repo (evals/real_agents/n8n_stub.py) so a fresh clone can
+# import this module and run the pure tests. The venv copy wins
+# when present. tests/test_n8n_stub_vendored.py pins the copies.
+_REPO_STUB = os.path.join(os.path.dirname(__file__), "n8n_stub.py")
+_stub_file = _STUB_PATH if os.path.exists(_STUB_PATH) else _REPO_STUB
+_spec = importlib.util.spec_from_file_location("roo_n8n_stub", _stub_file)
 _stub_mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_stub_mod)
 DeterministicStub = _stub_mod.DeterministicStub

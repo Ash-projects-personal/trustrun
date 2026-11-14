@@ -33,7 +33,11 @@ import pytest
 # the work-dir DB (the adapter does the same at its own import).
 WORK_DIR = os.path.expanduser(
     "~/workspace/hackathons/trustrun-venvs/babyagi-work")
-os.chdir(WORK_DIR)
+# Guarded: in a fresh clone the work dir does not exist, and the
+# importorskip below then skips the whole module instead of
+# dying at collection time.
+if os.path.isdir(WORK_DIR):
+    os.chdir(WORK_DIR)
 
 BABYAGI_SRC = os.path.expanduser(
     "~/workspace/hackathons/trustrun-venvs/babyagi-src")
