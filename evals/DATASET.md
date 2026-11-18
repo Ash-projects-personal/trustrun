@@ -35,18 +35,20 @@ The battery grew over time, so the per-audit count depends on the round:
 | 4-8 | 11 attacks | 19 |
 | 9-93 | 13 attacks | 21 |
 | 94-205 | 14 attacks | 22 |
-| 206+ | 15 attacks | 23 |
+| 206-220 | 15 attacks | 23 |
+| 221 | 16 attacks | 24 |
+| 222+ | 18 attacks | 26 |
 
-The battery grows to 17 attacks (25 checks per audit) when
+The battery grows to 20 attacks (28 checks per audit) when
 EscapeProbe and ImpossibleTask land. Single-purpose rows (a
 contract-target pair, a pass@k record, a clean validation label, one
 judge-bias pair judgment) count as 1 check-level judgment each.
 
-## Totals (2026-11-17 ~00:21 UTC)
+## Totals (2026-11-17 ~23:20 UTC)
 
 | Source | Audit-level rows | Check-level judgments |
 | --- | --- | --- |
-| Labeled eval rounds 1-214 (`reports/round*/summary.json`) | 59,607 | 1,289,919 |
+| Labeled eval rounds 1-237 (`reports/round*/summary.json`) | 66,507 | 1,463,319 |
 | ContractTarget calibration (`reports/contract_target/summary.json`) | 48 | 48 |
 | PassKTarget calibration (`reports/passk_target/summary.json`) | 48 | 48 |
 | Tasks/agents validation (`reports/validation/summary.json`) | 330 (300 clean + 30 full audits) | 930 (300 + 30 x 21) |
@@ -129,10 +131,8 @@ judge-bias pair judgment) count as 1 check-level judgment each.
 | Real-agent audit: Codex CLI 0.169.0, openai/codex release tag rust-v0.169.0 (`reports/real_agents/codex/summary.json`) | 25 | 550 (25 x 22) |
 | Real-agent audit: Amazon Q Developer CLI 1.19.7, aws/amazon-q-developer-cli release tag v1.19.7 (`reports/real_agents/amazon_q/summary.json`) | 25 | 550 (25 x 22) |
 | Real-agent audit: Qwen Code CLI 0.27.3, QwenLM/qwen-code npm 0.27.3 tag v0.27.3 (`reports/real_agents/qwen_code/summary.json`) | 25 | 550 (25 x 22) |
-| Real-agent audit 78: OpenClaw 2026.11.5-beta.3 — slice t1–t5 ONLY, PARTIAL (`reports/real_agents/clawdbot/summary-slice-t1-t5.json`) | 5 | 110 (5 x 22) |
-| Real-agent audit 78: OpenClaw 2026.11.5-beta.3 — slice t6–t10 ONLY, PARTIAL (`reports/real_agents/clawdbot/summary-slice-t6-t10.json`) | 5 | 110 (5 x 22) |
-| Real-agent audit 78: OpenClaw 2026.11.5-beta.3 — slice t11–t15 ONLY, PARTIAL (`reports/real_agents/clawdbot/summary-slice-t11-t15.json`) | 5 | 110 (5 x 22) |
-| Real-agent audit 78: OpenClaw 2026.11.5-beta.3 — slice t16–t20 ONLY, PARTIAL (`reports/real_agents/clawdbot/summary-slice-t16-t20.json`) | 5 | 111 (4 x 22 + 1 x 23) |
+| Real-agent audit 78: OpenClaw 2026.11.5-beta.3 (`reports/real_agents/clawdbot/summary.json`) | 25 | 565 (19 x 22 + 3 x 23 + 3 x 26) |
+| Real-agent audit 79: Kilo Code 7.8.30, Kilo-Org/kilocode tag v7.8.30 (`reports/real_agents/kilo/summary.json`) | 25 | 650 (25 x 26) |
 | RegressionLoop demo (`reports/regression/summary.json`) | 4 | 84 (4 x 21) |
 | JudgeBias scenarios (`reports/judgebias/summary.json`) | - | 248 (224 bias-pair judgments + 24 agentic alignment judgments) |
 | CheatCoverage verification (`reports/cheatcoverage-verify/summary.json`) | 36 | 756 (36 x 21) |
@@ -175,37 +175,50 @@ judge-bias pair judgment) count as 1 check-level judgment each.
 | Examiner-report section coverage, audit 74 Goose in §1424 shape (`reports/real_agents/goose/examiner-report-1424.md`, statements in `examiner-statements.json`) | 1 | 8 (8 required contents checked on 1 rendered report) |
 | NIST tenets labeled cases (`reports/nist-tenets-verify/summary.json`) | - | 130 (130 tenet verdicts, one per profile x tenet) |
 | Rogue evidence pack labeled cases (`reports/rogue-evidence-pack/summary.json`) | - | 8 (7 Practice 5 item verdicts + 1 repro-from-pack verdict on audit-64 mastra) |
-| **Total** | **62,273** | **1,390,491** |
+| **Total** | **69,203** | **1,564,665** |
 
-Round-audit detail: 59,592 audits sit in the round2-214 summary files
-(round 2: 24; rounds 3-18: 48 each; rounds 19-214: 300 each); the 59,607 total
+Round-audit detail: 66,492 audits sit in the round2-237 summary files
+(round 2: 24; rounds 3-18: 48 each; rounds 19-237: 300 each); the 66,507 total
 is per EVAL-REPORT.md and includes round 1 (15 audits, residual;
 its own summary file is not in a round1 directory). Check-level
 round math:
-15x17 + 24x17 + 48x17 + 5x48x19 + 10x48x21 + 75x300x21 + 112x300x22 + 9x300x23 = 1,289,919.
+15x17 + 24x17 + 48x17 + 5x48x19 + 10x48x21 + 75x300x21 + 112x300x22 + 15x300x23 + 1x300x24 + 16x300x26 = 1,463,319.
 
-Partial-slice rule: the audit-78 OpenClaw slice rows (t1–t5, 5 audits /
-110 checks; t6–t10, 5 audits / 110 checks; t11–t15, 5 audits / 110 checks;
-t16–t20, 5 audits / 111 checks) are PARTIAL. When the full
-25-task audit lands, REPLACE all four slice rows with the full-audit row
-(25 audits; checks re-summed from the 25 rows at finalize time — 556 if the
-15-attack battery holds for t21–t25) — never add all five, or the 20 slice
-rows double-count.
-The slice summaries live at
+Audit-78 OpenClaw FINALIZED 2026-11-17 (round-235 run): the five PARTIAL slice
+rows (t1–t5, 5 audits / 110 checks; t6–t10, 5 / 110; t11–t15, 5 / 110;
+t16–t20, 5 / 111; t21–t25, 5 / 124) were REPLACED by the single full-audit row
+(25 audits; 565 checks, re-summed from the 25 rows in summary.json: t1–t19 at
+22 checks, t20–t22 at 23, t23–t25 at 26) — never add both, or the 25 slice
+rows double-count. The replacement is totals-neutral (110+110+110+111+124 =
+565). (Correction 2026-11-17: the round-233 log's 559 / 118 figures were
+wrong — they priced t23–t25 at 24 checks, the 16-attack battery; the rows
+measure 18 attacks on t23–t25, i.e. 26 checks each, so the slice is 124 and
+the full audit is 565.)
+The full audit lives at `reports/real_agents/clawdbot/summary.json` (rows +
+evidence in `evidence.json`). The slice summaries remain at
 `reports/real_agents/clawdbot/summary-slice-t1-t5.json`,
 `reports/real_agents/clawdbot/summary-slice-t6-t10.json`,
-`reports/real_agents/clawdbot/summary-slice-t11-t15.json`, and
-`reports/real_agents/clawdbot/summary-slice-t16-t20.json`; the raw rows stay
-in `rows_partial.json` until the full audit finalizes.
+`reports/real_agents/clawdbot/summary-slice-t11-t15.json`,
+`reports/real_agents/clawdbot/summary-slice-t16-t20.json`, and
+`reports/real_agents/clawdbot/summary-slice-t21-t25.json` as the per-slice
+record. The pre-finalize rows_partial.json + evidence_partial.json backup is
+kept in the goal hidden_files audit78-finalize-backup/ directory.
+
+Audit-79 Kilo Code 7.8.30 FINALIZED 2026-11-17 (eval-loop run ~15:43 CST): the 25 rows were built slice by slice (partials verified at 17/25, then 21/25 with 144 evidence entries) and the single full-audit row above (25 audits; 650 checks, re-summed from the 25 rows in summary.json: 25 x 26 checks, 8 base checks + 18 attacks each. Correction 2026-11-17 ~17:20 CST: the first fold priced this at 550 checks on a 4-base assumption; the truth verifier caught the error, the convention is 8 base checks per audit, proven by the round math (13 attacks -> 21 checks; 18 attacks -> 26) and audit-78 slices (14 -> 22, 15 -> 23, 18 -> 26). Corrected to 650; totals +100.) is the only Kilo accounting, never add slice rows, or the 25 audits double-count. Final tallies, verified from summary.json: 25/25 BLOCK; contract READY 20 / BLOCK 5 (t6, t8, t14, t21, t25); stress BLOCK 22 / REVIEW 3; consistency READY 5 / REVIEW 18 / BLOCK 2; data READY 25/25; mean pass@k 0.8 (20 x 1.0, 5 x 0.0); evidence.json 166 entries; 0 crashes. Stub model served locally (no key, no network); stub-model caveat applies, NOT disclosure-ready; no new failure mode.
 
 Scale: **25 tasks x 12 agents** (tasks.json; agents in
 `evals/agents.py`, `evals/agents_round2.py`, `evals/agents_round3.py`).
 A round at this scale is 300 audits x 22 checks = 6,600
 check-level judgments from round 94 through round 205 (21 checks through round 93,
 at the 13-attack battery); 300 audits x 23 checks = 6,900 check-level
-judgments from round 206 onward, at the 15-attack battery. **MILESTONE CROSSED round 156 (2026-11-15): 1,004,550 check-level judgments — 4,550 past the 1,000,000 target** (round 157: 1,011,150, 11,150 past target; round 158: 1,017,750, 17,750 past target; round 159: 1,024,350, 24,350 past target) set 2026-11-07. The target is met; rounds continue to grow the dataset past it. That is
+judgments from round 206 through round 220, at the 15-attack battery; 300 audits x 24 checks = 7,200 check-level
+judgments from round 221, at the 16-attack battery; 300 audits x 26 checks = 7,800 check-level
+judgments from round 222 onward, at the 18-attack battery. No round ran at 25 checks: round 222 was planned at
+the 17-attack battery, but TRUSTRUN-PromptAdware was wired before round 222 executed, so round 222 is the
+first 18-attack round (this corrects the 2026-11-17 00:45 build entry's "Round-222 fold must use 25
+checks/audit" flag). **MILESTONE CROSSED round 156 (2026-11-15): 1,004,550 check-level judgments — 4,550 past the 1,000,000 target** (round 157: 1,011,150, 11,150 past target; round 158: 1,017,750, 17,750 past target; round 159: 1,024,350, 24,350 past target) set 2026-11-07. The target is met; rounds continue to grow the dataset past it. That is
 arithmetic from the measured per-round yield, not a promise: round
-cadence, battery growth, and new tasks/agents all move it. (Round 160: 1,030,950, 30,950 past target; round 161: 1,037,660, 37,660 past target; round 162: 1,044,260, 44,260 past target; round 163: 1,050,860, 50,860 past target; round 164: 1,057,460, 57,460 past target; round 165: 1,064,060, 64,060 past target; round 166: 1,070,660, 70,660 past target; round 167: 1,077,260, 77,260 past target; round 168: 1,083,860, 83,860 past target; round 169: 1,090,460, 90,460 past target; round 170: 1,097,060, 97,060 past target; round 171: 1,103,660, 103,660 past target; round 172: 1,110,260, 110,260 past target; round 173: 1,116,860, 116,860 past target; round 174: 1,123,460, 123,460 past target; round 175: 1,130,060, 130,060 past target; round 176: 1,136,770, 136,770 past target; round 177: 1,143,370, 143,370 past target; round 178: 1,149,970, 149,970 past target; round 179: 1,156,570, 156,570 past target; round 180: 1,163,170, 163,170 past target; round 181: 1,169,770, 169,770 past target; round 182: 1,176,370, 176,370 past target; round 183: 1,182,970, 182,970 past target; round 184: 1,189,570, 189,570 past target; round 185: 1,196,170, 196,170 past target; round 186: 1,202,770, 202,770 past target; round 187: 1,209,370, 209,370 past target; round 188: 1,215,970, 215,970 past target; round 189: 1,222,570, 222,570 past target; round 190: 1,229,170, 229,170 past target; round 191: 1,235,770, 235,770 past target; round 192: 1,242,480, 242,480 past target; round 193: 1,249,080, 249,080 past target; round 194: 1,255,680, 255,680 past target; round 195: 1,262,280, 262,280 past target; round 196: 1,268,880, 268,880 past target; round 197: 1,275,480, 275,480 past target; round 198: 1,282,080, 282,080 past target; round 199: 1,288,680, 288,680 past target; round 200: 1,295,280, 295,280 past target; round 201: 1,301,880, 301,880 past target; round 202: 1,308,480, 308,480 past target; round 203: 1,315,080, 315,080 past target; round 204: 1,321,680, 321,680 past target; round 205: 1,328,280, 328,280 past target; round 206: 1,335,180, 335,180 past target; round 207: 1,342,080, 342,080 past target; round 208: 1,348,980, 348,980 past target; round 209: 1,355,991, 355,991 past target; round 210: 1,362,891, 362,891 past target; round 211: 1,369,791, 369,791 past target; round 212: 1,376,691, 376,691 past target; round 213: 1,383,591, 383,591 past target; round 214: 1,390,491, 390,491 past target.)
+cadence, battery growth, and new tasks/agents all move it. (Round 160: 1,030,950, 30,950 past target; round 161: 1,037,660, 37,660 past target; round 162: 1,044,260, 44,260 past target; round 163: 1,050,860, 50,860 past target; round 164: 1,057,460, 57,460 past target; round 165: 1,064,060, 64,060 past target; round 166: 1,070,660, 70,660 past target; round 167: 1,077,260, 77,260 past target; round 168: 1,083,860, 83,860 past target; round 169: 1,090,460, 90,460 past target; round 170: 1,097,060, 97,060 past target; round 171: 1,103,660, 103,660 past target; round 172: 1,110,260, 110,260 past target; round 173: 1,116,860, 116,860 past target; round 174: 1,123,460, 123,460 past target; round 175: 1,130,060, 130,060 past target; round 176: 1,136,770, 136,770 past target; round 177: 1,143,370, 143,370 past target; round 178: 1,149,970, 149,970 past target; round 179: 1,156,570, 156,570 past target; round 180: 1,163,170, 163,170 past target; round 181: 1,169,770, 169,770 past target; round 182: 1,176,370, 176,370 past target; round 183: 1,182,970, 182,970 past target; round 184: 1,189,570, 189,570 past target; round 185: 1,196,170, 196,170 past target; round 186: 1,202,770, 202,770 past target; round 187: 1,209,370, 209,370 past target; round 188: 1,215,970, 215,970 past target; round 189: 1,222,570, 222,570 past target; round 190: 1,229,170, 229,170 past target; round 191: 1,235,770, 235,770 past target; round 192: 1,242,480, 242,480 past target; round 193: 1,249,080, 249,080 past target; round 194: 1,255,680, 255,680 past target; round 195: 1,262,280, 262,280 past target; round 196: 1,268,880, 268,880 past target; round 197: 1,275,480, 275,480 past target; round 198: 1,282,080, 282,080 past target; round 199: 1,288,680, 288,680 past target; round 200: 1,295,280, 295,280 past target; round 201: 1,301,880, 301,880 past target; round 202: 1,308,480, 308,480 past target; round 203: 1,315,080, 315,080 past target; round 204: 1,321,680, 321,680 past target; round 205: 1,328,280, 328,280 past target; round 206: 1,335,180, 335,180 past target; round 207: 1,342,080, 342,080 past target; round 208: 1,348,980, 348,980 past target; round 209: 1,355,991, 355,991 past target; round 210: 1,362,891, 362,891 past target; round 211: 1,369,791, 369,791 past target; round 212: 1,376,691, 376,691 past target; round 213: 1,383,591, 383,591 past target; round 214: 1,390,491, 390,491 past target; round 215: 1,397,391, 397,391 past target; round 216: 1,404,291, 404,291 past target; round 217: 1,411,191, 411,191 past target; round 218: 1,418,091, 418,091 past target; round 219: 1,424,991, 424,991 past target; round 220: 1,431,891, 431,891 past target; round 221: 1,439,091, 439,091 past target; round 222: 1,446,891, 446,891 past target; round 223: 1,454,691, 454,691 past target; round 224: 1,462,491, 462,491 past target; round 225: 1,470,291, 470,291 past target; round 226: 1,478,091, 478,091 past target; round 227: 1,485,891, 485,891 past target; round 228: 1,493,691, 493,691 past target; round 229: 1,501,491, 501,491 past target; round 230: 1,509,291, 509,291 past target; round 231: 1,517,091, 517,091 past target; round 232: 1,524,891, 524,891 past target; round 233: 1,532,691, 532,691 past target; round 234: 1,540,491, 540,491 past target; round 235: 1,548,415, 548,415 past target; round 236: 1,556,215, 556,215 past target; round 237: 1,564,015, 564,015 past target; audit 79 (Kilo): 1,564,665, 564,665 past target.)
 
 ## Schema of a labeled row
 
