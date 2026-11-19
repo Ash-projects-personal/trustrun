@@ -205,6 +205,15 @@ BRIDGE_PORT = 18068
 WEBHOOK_URL = "http://127.0.0.1:%d/webhook/trustrun" % N8N_PORT
 HEALTHZ_URL = "http://127.0.0.1:%d/healthz" % N8N_PORT
 WEBHOOK_TIMEOUT = 180  # seconds; healthy tasks take ~3s
+# Cold-start budget for the n8n server itself. Measured 2026-11-16:
+# a cold start takes ~90-110s under box load 7+ (n8n copies the
+# editor-ui assets into .n8n/.cache first, and its stdout stays
+# buffered until the event loop frees up, so the log shows nothing
+# until the server is nearly ready). The old 90s deadline turned
+# one slow start into 10 red e2e tests (suite 2026-11-16 23:18).
+# 300s keeps 3x margin; a genuinely dead server still exits fast
+# and is reported immediately via proc.poll().
+N8N_STARTUP_TIMEOUT = 300  # seconds
 # Cold-start activation race (see docstring finding 6): a webhook
 # 404 is retried this long before it counts as a harness failure.
 # A 404 creates no execution, so the retry fires the task once.
@@ -445,22 +454,51 @@ def _healthz_ok():
         return False
 
 
+def _stage_db_copy(db_path, dest_parent):
+    """Copy a WAL-mode SQLite DB aside for a read-only check.
+
+    The staging dir lives under dest_parent (the adapter venv
+    dir, on the main disk), never under /tmp: /tmp here is a
+    512 MB tmpfs and a full /tmp turned this check into a red
+    suite (round 138: OSError Errno 28 copying database.sqlite).
+    Refuses with a readable error when the destination
+    filesystem cannot hold two copies of the DB plus a 1 MiB
+    margin, instead of failing mid-copy with a bare OSError.
+    Returns the staging dir; the caller removes it.
+    """
+    os.makedirs(dest_parent, exist_ok=True)
+    total = 0
+    for suffix in ("", "-wal", "-shm"):
+        src = db_path + suffix
+        if os.path.exists(src):
+            total += os.path.getsize(src)
+    free = shutil.disk_usage(dest_parent).free
+    if free < 2 * total + 1024 * 1024:
+        raise RuntimeError(
+            "not enough free space to stage the n8n DB copy: "
+            "need %d bytes under %s, %d free"
+            % (2 * total + 1024 * 1024, dest_parent, free))
+    tmpdir = tempfile.mkdtemp(prefix="n8n-adapter-db-", dir=dest_parent)
+    for suffix in ("", "-wal", "-shm"):
+        src = db_path + suffix
+        if os.path.exists(src):
+            shutil.copy(src, os.path.join(tmpdir, "db.sqlite" + suffix))
+    return tmpdir
+
+
 def _verify_webhook_registered():
     """Read-only check that the production webhook routes to v2.
 
-    Copies the WAL-mode DB to /tmp first (never touches the live
-    files) and confirms webhook_entity maps POST trustrun to the
-    v2 workflow id. Guards against the routing bug fixed during
+    Copies the WAL-mode DB aside first (under the adapter venv
+    dir, never /tmp, and never touches the live files) and
+    confirms webhook_entity maps POST trustrun to the v2
+    workflow id. Guards against the routing bug fixed during
     setup, where the row still pointed at the superseded v1.
     """
     user_folder = os.path.join(_VENV_DIR, ".n8n")
     db_path = os.path.join(user_folder, ".n8n", "database.sqlite")
-    tmpdir = tempfile.mkdtemp(prefix="n8n-adapter-db-")
+    tmpdir = _stage_db_copy(db_path, _VENV_DIR)
     try:
-        for suffix in ("", "-wal", "-shm"):
-            src = db_path + suffix
-            if os.path.exists(src):
-                shutil.copy(src, os.path.join(tmpdir, "db.sqlite" + suffix))
         conn = sqlite3.connect(os.path.join(tmpdir, "db.sqlite"))
         try:
             rows = list(conn.execute(
@@ -479,6 +517,27 @@ def _verify_webhook_registered():
             "n8n webhook POST trustrun routes to %s, not the v2 "
             "workflow %s" % (rows[0][0], N8N_WORKFLOW_ID))
     return True
+
+
+def _wait_for_healthz(proc, timeout):
+    """Wait up to `timeout` seconds for the n8n server to answer healthz.
+
+    Raises RuntimeError if the process exits first or the deadline
+    passes with healthz still down. Split out of _ensure_n8n_server
+    so the wait logic is unit-testable without a real server.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if proc.poll() is not None:
+            raise RuntimeError(
+                "n8n server exited during startup (code %s); "
+                "see %s" % (proc.returncode, _N8N_LOG))
+        if _healthz_ok():
+            return True
+        time.sleep(2)
+    raise RuntimeError(
+        "n8n server did not answer healthz within %ss; "
+        "see %s" % (timeout, _N8N_LOG))
 
 
 def _ensure_n8n_server():
@@ -504,19 +563,7 @@ def _ensure_n8n_server():
         )
         _N8N_PROC = proc
         _N8N_STARTED_BY_US = True
-        deadline = time.time() + 90
-        while time.time() < deadline:
-            if proc.poll() is not None:
-                raise RuntimeError(
-                    "n8n server exited during startup (code %s); "
-                    "see %s" % (proc.returncode, _N8N_LOG))
-            if _healthz_ok():
-                break
-            time.sleep(2)
-        else:
-            raise RuntimeError(
-                "n8n server did not answer healthz within 90s; "
-                "see %s" % _N8N_LOG)
+        _wait_for_healthz(proc, N8N_STARTUP_TIMEOUT)
         _verify_webhook_registered()
 
 

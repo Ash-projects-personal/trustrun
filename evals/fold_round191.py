@@ -1,0 +1,82 @@
+"""Fold round 191 into DATASET.md Totals; independently re-sum three ways."""
+import json
+import os
+import re
+import subprocess
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+DS = os.path.join(HERE, "DATASET.md")
+
+# --- independent re-sums BEFORE editing ---
+# 1. disk rows rounds 2-191 + 15 round-1 residual
+disk = 0
+for n in range(2, 192):
+    path = os.path.join(HERE, "reports", "round%d" % n, "summary.json")
+    with open(path, encoding="utf-8") as h:
+        disk += len(json.load(h))
+assert disk == 52692, "disk rows rounds 2-191: %d (expected 52692)" % disk
+assert disk + 15 == 52707, "rounds 1-191 audits"
+# 2. check math
+checks = 15 * 17 + 24 * 17 + 48 * 17 + 5 * 48 * 19 + 10 * 48 * 21 \
+    + 75 * 300 * 21 + 98 * 300 * 22
+assert checks == 1135419, "check math: %d" % checks
+
+with open(DS, encoding="utf-8") as h:
+    text = h.read()
+
+# 3. full Totals-table re-sum on the CURRENT table, then apply the delta
+# (audit column may carry a parenthetical, e.g. "330 (300 clean + ...)).
+# Scope to the Totals table block only: a battery-size table above it
+# (lines 34-37) has the same 3-column shape.
+TABLE_ROW = re.compile(r"^\| [^|]*\| ([0-9,]+|-)[^|]*\| ([0-9,]+)", flags=re.M)
+_tot_start = text.index("## Totals (")
+_tot_end = text.index("| **Total** |", _tot_start)
+_tot_block = text[_tot_start:_tot_end]
+rows = TABLE_ROW.findall(_tot_block)
+a_old = sum(0 if a == "-" else int(a.replace(",", "")) for a, _ in rows)
+c_old = sum(int(c.replace(",", "")) for _, c in rows)
+assert (a_old, c_old) == (55063, 1229170), (
+    "current Totals-table re-sum: %d / %d" % (a_old, c_old)
+)
+
+utc = subprocess.check_output(
+    ["date", "-u", "+%Y-%m-%d ~%H:%M UTC"]).decode().strip()
+
+EDITS = [
+    ("## Totals (2026-11-16 ~11:49 UTC)",
+     "## Totals (%s)" % utc, 1),
+    ("| Labeled eval rounds 1-190 (`reports/round*/summary.json`) | 52,407 | 1,128,819 |",
+     "| Labeled eval rounds 1-191 (`reports/round*/summary.json`) | 52,707 | 1,135,419 |", 1),
+    ("| **Total** | **55,063** | **1,229,170** |",
+     "| **Total** | **55,363** | **1,235,770** |", 1),
+    ("Round-audit detail: 52,392 audits sit in the round2-190 summary files\n"
+     "(round 2: 24; rounds 3-18: 48 each; rounds 19-190: 300 each)",
+     "Round-audit detail: 52,692 audits sit in the round2-191 summary files\n"
+     "(round 2: 24; rounds 3-18: 48 each; rounds 19-191: 300 each)", 1),
+    ("15x17 + 24x17 + 48x17 + 5x48x19 + 10x48x21 + 75x300x21 + 97x300x22 = 1,128,819.",
+     "15x17 + 24x17 + 48x17 + 5x48x19 + 10x48x21 + 75x300x21 + 98x300x22 = 1,135,419.", 1),
+    ("round 189: 1,222,570, 222,570 past target; round 190: 1,229,170, 229,170 past target.)",
+     "round 189: 1,222,570, 222,570 past target; round 190: 1,229,170, 229,170 past target; "
+     "round 191: 1,235,770, 235,770 past target.)", 1),
+]
+for old, new, expected in EDITS:
+    count = text.count(old)
+    assert count == expected, (
+        "edit %r: expected %d, found %d" % (old[:60], expected, count)
+    )
+    text = text.replace(old, new)
+
+# --- re-sum the EDITED table and confirm the new Total row ---
+_tot_start = text.index("## Totals (")
+_tot_end = text.index("| **Total** |", _tot_start)
+rows = TABLE_ROW.findall(text[_tot_start:_tot_end])
+a_new = sum(0 if a == "-" else int(a.replace(",", "")) for a, _ in rows)
+c_new = sum(int(c.replace(",", "")) for _, c in rows)
+assert (a_new, c_new) == (55363, 1235770), (
+    "edited Totals-table re-sum: %d / %d" % (a_new, c_new)
+)
+
+with open(DS, "w", encoding="utf-8") as h:
+    h.write(text)
+print("folded round 191: rounds 52,707 / 1,135,419; grand total 55,363 / 1,235,770")
+print("Totals header now:", utc)

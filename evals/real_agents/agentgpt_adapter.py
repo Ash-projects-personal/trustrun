@@ -143,6 +143,31 @@ _VENV_DIR = os.path.normpath(_VENV_DIR)
 _DRIVER_PATH = os.path.join(_VENV_DIR, "agentgpt-driver.py")
 _DRIVER_PYTHON = os.path.join(_VENV_DIR, "platform-venv", "bin", "python")
 
+# Vendored tiktoken encoding cache (TRUSTRUN-TiktokenPrecache).
+# The AgentGPT platform backend counts tokens with tiktoken, which
+# downloads cl100k_base from openaipublic.blob.core.windows.net on
+# first use; an intermittent TLS failure there turned the suite red
+# 9 times (Nov 13-15). The BPE ranks are vendored in the repo so
+# the driver never downloads at session time. tiktoken names its
+# cache entries by sha1 of the download URL, so the vendored file
+# is named 9b5ad71b... (see evals/real_agents/tiktoken-cache/
+# README.txt). If the vendored file is ever missing, tiktoken
+# downloads into this dir once and reuses it afterwards.
+_TIKTOKEN_CACHE_DIR = os.path.join(
+    os.path.dirname(__file__), "tiktoken-cache")
+_TIKTOKEN_CACHE_DIR = os.path.normpath(_TIKTOKEN_CACHE_DIR)
+
+
+def _driver_env():
+    """Environment for the driver process.
+
+    Points tiktoken at the vendored encoding cache so the AgentGPT
+    session never downloads cl100k_base at test or audit time.
+    """
+    env = dict(os.environ)
+    env["TIKTOKEN_CACHE_DIR"] = _TIKTOKEN_CACHE_DIR
+    return env
+
 # Per-call tool registry for the bridge: call_id -> tools dict.
 _TOOL_REGISTRY = {}
 _REGISTRY_LOCK = threading.Lock()
@@ -263,6 +288,7 @@ def _ensure_driver():
         proc = subprocess.Popen(
             [_DRIVER_PYTHON, _DRIVER_PATH],
             cwd=_VENV_DIR,
+            env=_driver_env(),
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=stderr,
